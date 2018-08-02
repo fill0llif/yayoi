@@ -181,7 +181,7 @@ shared annotation WithLayoutAnnotation withLayout(
 	Integer order = 4) =>
 		WithLayoutAnnotation(layout, pckg, order);
 
-shared annotation WindowEventAnnotation windowEvent(
+shared annotation WindowEventAnnotation onWindowEvent(
 	String listener, 
 	String pckg = "",
 	Integer order = 4) =>
