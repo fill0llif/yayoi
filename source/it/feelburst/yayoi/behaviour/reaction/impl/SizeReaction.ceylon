@@ -1,0 +1,33 @@
+import it.feelburst.yayoi.behaviour.reaction {
+	Reaction,
+	Independent
+}
+import it.feelburst.yayoi.marker {
+	SizeAnnotation
+}
+import it.feelburst.yayoi.model.component {
+	AbstractComponent
+}
+import it.feelburst.yayoi.model.concurrent {
+	Condition,
+	Lock
+}
+"A reaction that sets the size of a component"
+shared class SizeReaction(
+	shared actual AbstractComponent cmp,
+	shared actual SizeAnnotation ann)
+	satisfies Reaction<AbstractComponent>&Independent {
+	value depender = IndependentImpl();
+	shared actual Lock lock =>
+		depender.lock;
+	shared actual Condition doneExecuting =>
+		depender.doneExecuting;
+	shared actual void signalDependent() =>
+		depender.signalDependent();
+	shared actual void execute() {
+		value setSize = ann.agentMdl(cmp);
+		setSize(ann.width, ann.height);
+		log.debug("Size (``ann.width``,``ann.height``) set requested for Component '``cmp``'.");
+	}
+	
+}

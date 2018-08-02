@@ -1,0 +1,14 @@
+.ceylon
+modules
+.DS_Store
+build
+target
+.classpath
+.project
+org.eclipse.m2e.core.prefs
+org.eclipse.core.resources.prefs
+org.eclipse.jdt.core.prefs
+/classes
+/.exploded
+.idea
+*.iml
