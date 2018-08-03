@@ -6,7 +6,7 @@ _Yayoi_ is a GUI annotation framework and provides/allows:
 	* a reaction can depend on another one of the same component (e.g **centered** depends on **size**);
 * executing actions on multiple components, _Actions_ (as of now only layout setting, **doLayout**, is supported);
 * registering listeners on components (as of now only _ActionListener_, **onActionPerformed**, and _WindowListener_, **onWindowEvent** are supported):
-	* a default _WindowAdapter_ is already registered with lowest precedence (needed for application shutdown) if and only if a ***exitOnClose** has been set on a window declaration;
+	* a default _WindowAdapter_ is already registered with lowest precedence (needed for application shutdown) if and only if a **exitOnClose** has been set on a window declaration;
 * firing of Spring Event when basic component properties are set (on AWT Thread);
 * enabling component construction using object, method and class notation (e.g. _ValueDeclaration_, _FunctionDeclaration_ and _ClassDeclaration_) within a package;
 * autowiring of components constructed using class notation;
