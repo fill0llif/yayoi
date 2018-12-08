@@ -1,7 +1,3 @@
-import java.awt {
-	LayoutManager
-}
-shared interface MutableWithLayout<Type=LayoutManager>
+shared sealed interface MutableWithLayout<Type>
 	satisfies WithLayout<Type>&WithLayoutMutator<Type>
-	given Type satisfies LayoutManager {
-}
+	given Type satisfies Object {}

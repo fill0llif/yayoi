@@ -9,6 +9,7 @@ import it.feelburst.yayoi.marker {
 import it.feelburst.yayoi.model.component {
 	AbstractComponent
 }
+
 "A reaction that centers the component within its container or the screen"
 shared class CenteredReaction(
 	shared actual AbstractComponent cmp,
@@ -24,6 +25,6 @@ shared class CenteredReaction(
 	shared actual void execute() {
 		value center = ann.agentMdl(cmp);
 		center();
-		log.debug("Component '``cmp``' centered requested.");
+		log.debug("Reaction: Component '``cmp``' centered requested.");
 	}
 }

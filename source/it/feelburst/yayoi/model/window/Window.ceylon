@@ -1,25 +1,26 @@
 import it.feelburst.yayoi.model {
-	Source,
-	Reactor
+	Declaration,
+	Reactor,
+	Value
 }
 import it.feelburst.yayoi.model.container {
 	AbstractContainer
 }
-
-import javax.swing {
-	JFrame
+import it.feelburst.yayoi.model.visitor {
+	Visitor
 }
+
 "A window that can be rendered on screen and can contains
  many containers and components"
-shared interface Window<out Type=JFrame>
-	satisfies AbstractContainer&Source<Type>&Reactor
-	given Type satisfies JFrame {
+shared interface Window<out Type>
+	satisfies AbstractContainer&Declaration&Value<Type>&Reactor
+	given Type satisfies Object {
 	"This window's title"
-	shared formal String title;
+	shared formal String? title;
 	"Set title of this window"
 	shared formal void setTitle(String title);
 	"This window's state"
-	shared formal WindowState|Exception state;
+	shared formal WindowState state;
 	"Set exit app on close on this window"
 	shared formal void setExitOnClose();
 	"Whether this window is visible or it has been disposed of"
@@ -42,4 +43,7 @@ shared interface Window<out Type=JFrame>
 	shared formal void close();
 	"Pack this window"
 	shared formal void pack();
+	
+	shared actual void accept(Visitor visitor) =>
+		visitor.visitWindow(this);
 }

@@ -4,112 +4,148 @@ import ceylon.collection {
 }
 
 import it.feelburst.yayoi.model {
-	Source
+	Value
 }
 import it.feelburst.yayoi.model.component {
 	AbstractComponent
 }
-import it.feelburst.yayoi.model.component.swing {
-	SwingHierarchical
-}
 import it.feelburst.yayoi.model.container {
-	AbstractContainer,
-	MutableContainer
+	AbstractContainer
 }
-
 import it.feelburst.yayoi.model.listener {
 	Listener
 }
+import it.feelburst.yayoi.model.visitor {
+	Visitor
+}
 
 import java.awt {
-	Container
+	Container,
+	Window
 }
-import java.util {
-	EventListener
+import java.awt.event {
+	ActionListener,
+	WindowListener
+}
+
+import javax.swing {
+	AbstractButton,
+	SwingUtilities {
+		invokeLater
+	}
 }
 
 import org.springframework.context {
 	ApplicationEvent
 }
 
-shared class AwtContainer<Type>(
+shared sealed class AwtContainer<out Type>(
 	shared actual String name,
-	Source<Type> source,
+	Value<Type> vl,
 	void publishEvent(ApplicationEvent event))
-		satisfies AbstractContainer
+		satisfies AbstractComponent
 		given Type satisfies Container {
 	
-	value hierarchical = SwingHierarchical();
+	MutableMap<String,Listener<Anything>> lstnrs =
+		HashMap<String,Listener<Anything>>();
 	
-	value awtMutableContainer = MutableContainer();
-	
-	MutableMap<String,Listener<EventListener>> lstnrs = HashMap<String,Listener<EventListener>>();
-	
-	shared actual AbstractContainer? parent =>
-		hierarchical.parent;
-	
-	shared actual void setParent(AbstractContainer? parent) =>
-		hierarchical.setParent(parent);
-	
-	shared actual AbstractContainer? root =>
-		hierarchical.root;
+	//DO NOT USE
+	shared actual variable AbstractContainer? parent = null;
 	
 	shared actual Integer x =>
-		source.val.x;
+		vl.val.x;
 	
 	shared actual Integer y =>
-		source.val.y;
+		vl.val.y;
 	
 	shared actual Integer width =>
-		source.val.width;
+		vl.val.width;
 	
 	shared actual Integer height =>
-		source.val.height;
+		vl.val.height;
 	
 	shared actual Boolean visible =>
-		source.val.visible;
+		vl.val.visible;
 	
-	shared actual void setVisible(Boolean visible) {
-		source.val.visible = visible;
-		source.val.repaint();
+	shared actual void display() {
+		vl.val.visible = true;
+		vl.val.validate();
+		vl.val.repaint();
+	}
+	
+	shared actual void hide() {
+		vl.val.visible = false;
+		vl.val.validate();
+		vl.val.repaint();
 	}
 	
 	shared actual void setLocation(Integer x, Integer y) {
-		source.val.setLocation(x, y);
-		source.val.repaint();
+		vl.val.setLocation(x, y);
+		vl.val.validate();
+		vl.val.repaint();
 	}
 	
 	shared actual void setSize(Integer width, Integer height) {
-		source.val.setSize(width, height);
-		source.val.repaint();
+		vl.val.setSize(width, height);
+		vl.val.validate();
+		vl.val.repaint();
 	}
 	
 	shared actual void center() {}
 	
-	shared actual AbstractComponent? component(String name) =>
-		awtMutableContainer.component(name);
-	
-	shared actual AbstractComponent[] components =>
-		awtMutableContainer.components;
-	
-	shared actual void addComponent(AbstractComponent component) =>
-		awtMutableContainer.addComponent(component);
-	
-	shared actual void removeComponent(String name) =>
-		awtMutableContainer.removeComponent(name);
-	
-	shared actual Listener<EventListener>[] listeners =>
+	shared actual Listener<Anything>[] listeners =>
 		lstnrs
 		.items
 		.sequence();
 	
-	shared actual Listener<EventListener>? listener(String name) =>
+	shared actual Listener<Anything>? listener(String name) =>
 		lstnrs[name];
 	
-	shared actual void addListener(Listener<EventListener> listener) =>
+	shared actual void addListener(Listener<Anything> listener) {
 		lstnrs.put(listener.name, listener);
+		if (is AbstractButton btn = vl.val) {
+			if (is ActionListener actnLstnr = listener.val) {
+				invokeLater(() {
+					btn.addActionListener(actnLstnr);
+					log.debug("ActionListener '``actnLstnr``' added to SwingButton '``btn``'.");
+				});
+			}
+		}
+		else if (is Window wndw = vl.val) {
+			if (is WindowListener wndwLstnr = listener.val) {
+				invokeLater(() {
+					wndw.addWindowListener(wndwLstnr);
+					log.debug("WindowListener '``wndwLstnr``' added to SwingWindow '``vl.val``'.");
+				});
+			}
+		}
+	}
 	
-	shared actual void removeListener(String name) =>
-		lstnrs.remove(name);
+	shared actual Listener<Anything>? removeListener(String name) {
+		if (exists listener = lstnrs.remove(name)) {
+			if (is AbstractButton btn = vl.val) {
+				if (is ActionListener actnLstnr = listener.val) {
+					invokeLater(() {
+						btn.removeActionListener(actnLstnr);
+						log.debug("ActionListener '``actnLstnr``' removed from SwingButton '``btn``'.");
+					});
+				}
+			}
+			else if (is Window wndw = vl.val) {
+				if (is WindowListener wndwLstnr = listener.val) {
+					invokeLater(() {
+						wndw.removeWindowListener(wndwLstnr);
+						log.debug("WindowListener '``wndwLstnr``' removed from SwingWindow '``vl.val``'.");
+					});
+				}
+			}
+			return listener;
+		}
+		else {
+			return null;
+		}
+	}
+	
+	shared actual void accept(Visitor visitor) {}
 	
 }

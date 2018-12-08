@@ -18,6 +18,10 @@ import it.feelburst.yayoi.model.listener {
 
 	Listener
 }
+import ceylon.language.meta {
+
+	classDeclaration
+}
 "A reaction arised from a component"
 see(
 	`interface Component`,
@@ -25,7 +29,9 @@ see(
 	`interface Window`,
 	`interface Listener`,
 	`interface Layout`)
-shared interface Reaction<out Cmpnt=Object> satisfies Order {
+shared interface Reaction<out Cmpnt=Object>
+	satisfies Order
+	given Cmpnt satisfies Object {
 	"Component"
 	shared formal Cmpnt cmp;
 	"Reaction annotation"
@@ -37,4 +43,6 @@ shared interface Reaction<out Cmpnt=Object> satisfies Order {
 		assert (is Order a = ann);
 		return a.order;
 	}
+	shared actual String string =>
+		"``classDeclaration(this).name``(cmp = ``cmp``,ann = ``ann``, order = ``order``)";
 }

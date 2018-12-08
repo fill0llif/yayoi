@@ -1,13 +1,14 @@
 import ceylon.language.meta {
 	annotations
 }
-
-import it.feelburst.yayoi {
-	ComponentDecl,
-	ActionDecl
+import ceylon.language.meta.declaration {
+	FunctionDeclaration,
+	ValueDeclaration,
+	ClassDeclaration
 }
+
 import it.feelburst.yayoi.behaviour.component {
-	AnnotationChecker
+	AnnotationReader
 }
 import it.feelburst.yayoi.marker {
 	ComponentAnnotation,
@@ -15,7 +16,8 @@ import it.feelburst.yayoi.marker {
 	ContainerAnnotation,
 	WindowAnnotation,
 	DoLayoutAnnotation,
-	LayoutAnnotation
+	LayoutAnnotation,
+	SetLookAndFeelAnnotation
 }
 
 import org.springframework.stereotype {
@@ -23,11 +25,12 @@ import org.springframework.stereotype {
 }
 
 component
-shared class AnnotationCheckerImpl() satisfies AnnotationChecker {
+shared class AnnotationReaderImpl() satisfies AnnotationReader {
 	
 	shared actual
 		ComponentAnnotation|ContainerAnnotation|WindowAnnotation|
-		LayoutAnnotation|ListenerAnnotation? component(ComponentDecl decl) =>
+		LayoutAnnotation|ListenerAnnotation? component(
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) =>
 		if (exists cmpAnn = annotations(`ComponentAnnotation`,decl)) then
 			cmpAnn
 		else if (exists cntAnn = annotations(`ContainerAnnotation`,decl)) then
@@ -41,9 +44,15 @@ shared class AnnotationCheckerImpl() satisfies AnnotationChecker {
 		else
 			null;
 	
-	shared actual DoLayoutAnnotation? action(ActionDecl decl) =>
-		if (exists lytAnn = annotations(`DoLayoutAnnotation`,decl)) then
-			lytAnn
+	shared actual DoLayoutAnnotation|SetLookAndFeelAnnotation? action(
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) =>
+		if (is FunctionDeclaration decl) then
+			if (exists lytAnn = annotations(`DoLayoutAnnotation`,decl)) then
+				lytAnn
+			else if (exists lkndflAnn = annotations(`SetLookAndFeelAnnotation`,decl)) then
+				lkndflAnn
+			else
+				null
 		else
 			null;
 }

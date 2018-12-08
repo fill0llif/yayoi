@@ -1,21 +1,41 @@
 import it.feelburst.yayoi.model {
-	Source
+	Value
 }
 import it.feelburst.yayoi.model.container {
 	Layout,
 	MutableWithLayout
+}
+import it.feelburst.yayoi.model.impl {
+	LateValue
 }
 
 import java.awt {
 	Container,
 	LayoutManager
 }
-shared class SwingMutableWithLayout<Type,LayoutType>(Source<Type> source)
+
+import javax.swing {
+	SwingUtilities {
+		invokeLater
+	}
+}
+shared sealed class SwingMutableWithLayout<out Type,LayoutType>(
+	String name,
+	Value<Type> vl,
+	void publishEvent(Object event))
 	satisfies MutableWithLayout<LayoutType>
 	given Type satisfies Container
-	given LayoutType satisfies LayoutManager {
+	given LayoutType satisfies Object {
 	
-	variable Layout<LayoutType>? lyt = null;
+	late variable Layout<LayoutType>? lyt =
+		SwingLayout<LayoutType>(
+			"``name``.SwingLayout()",
+			null,
+			LateValue<LayoutType>(() {
+				assert (is LayoutType layt = vl.val.layout);
+				return layt;
+			}),
+			publishEvent);
 	
 	shared actual Layout<LayoutType>? layout =>
 		lyt;
@@ -23,12 +43,18 @@ shared class SwingMutableWithLayout<Type,LayoutType>(Source<Type> source)
 	shared actual void setLayout(Layout<LayoutType>? layout) {
 		if (exists layout) {
 			lyt = layout;
-			if (layout.val == nullLayout) {
-				source.val.layout = null;
-			} else {
-				source.val.layout = layout.val;
-			}
-			log.info("LayoutManager '``layout.val``' added to SwingContainer '``source.val``'.");
+			assert (is LayoutManager layt = layout.val);
+			invokeLater(() {
+				vl.val.layout = layt;
+			});
+			log.debug("LayoutManager '``layt``' added to SwingContainer '``vl.val``'.");
+		}
+		else {
+			lyt = null;
+			invokeLater(() {
+				vl.val.layout = null;
+			});
+			log.debug("Null LayoutManager added to SwingContainer '``vl.val``'.");
 		}
 	}
 	

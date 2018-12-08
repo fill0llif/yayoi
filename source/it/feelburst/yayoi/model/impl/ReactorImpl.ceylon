@@ -4,14 +4,15 @@ import it.feelburst.yayoi.behaviour.reaction {
 import it.feelburst.yayoi.model {
 	Reactor
 }
-shared class ReactorImpl()
-	satisfies Reactor {
+shared sealed class ReactorImpl() satisfies Reactor {
 	
 	variable Reaction<>[] rctns = [];
 	
-	shared actual Reaction<>[] reactions =>
+	shared actual Reaction<Type>[] reactions<Type=Object>()
+		given Type satisfies Object =>
 		rctns
-		.sort((Reaction<> x, Reaction<> y) =>
+			.narrow<Reaction<Type>>()
+			.sort((Reaction<Type> x, Reaction<Type> y) =>
 			x.order <=> y.order);
 	
 	shared actual void addReaction(Reaction<> reaction) =>

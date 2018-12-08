@@ -13,16 +13,8 @@ shared final class Lock(Boolean fair = false) satisfies Obtainable {
 			throw e;
 		}
 	}
-	shared Condition newCondition() =>
-		object satisfies Condition {
-			JCondition condition = reentrantLock.newCondition();
-			shared actual void await() =>
-				condition.await();
-			shared actual void signal() =>
-				condition.signal();
-			shared actual void signalAll() =>
-				condition.signalAll();
-		};
+	shared JCondition newCondition() =>
+		reentrantLock.newCondition();
 	shared actual String string =>
 		reentrantLock.string;
 }

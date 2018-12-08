@@ -1,14 +1,9 @@
-import ceylon.interop.java {
-	javaClassFromDeclaration,
-	javaString
-}
 import ceylon.language.meta {
-	annotations
+	annotations,
+	classDeclaration
 }
 import ceylon.language.meta.declaration {
 	ClassDeclaration,
-	FunctionDeclaration,
-	ValueDeclaration,
 	Package
 }
 import ceylon.logging {
@@ -21,7 +16,7 @@ import it.feelburst.yayoi.behaviour.action {
 	Action
 }
 import it.feelburst.yayoi.behaviour.component {
-	ComponentRegister
+	ComponentRegistry
 }
 import it.feelburst.yayoi.behaviour.component.impl {
 	ActionContext,
@@ -38,7 +33,21 @@ import it.feelburst.yayoi.marker {
 	YayoiAnnotation
 }
 import it.feelburst.yayoi.model {
-	Reactor
+	Reactor,
+	Framework
+}
+import it.feelburst.yayoi.model.component {
+	Component
+}
+import it.feelburst.yayoi.model.container {
+	Container,
+	Layout
+}
+import it.feelburst.yayoi.model.listener {
+	Listener
+}
+import it.feelburst.yayoi.model.window {
+	Window
 }
 
 import java.lang {
@@ -47,7 +56,8 @@ import java.lang {
 		currentThread
 	},
 	Types {
-		classForType
+		classForType,
+		classForDeclaration
 	}
 }
 import java.util.concurrent {
@@ -56,7 +66,6 @@ import java.util.concurrent {
 
 import javax.swing {
 	SwingUtilities {
-		invokeLater,
 		invokeAndWait
 	}
 }
@@ -70,28 +79,6 @@ import org.springframework.context {
 import org.springframework.context.annotation {
 	AnnotationConfigApplicationContext
 }
-import it.feelburst.yayoi.model.component {
-
-	Component
-}
-import it.feelburst.yayoi.model.container {
-
-	Container,
-	Layout
-}
-import it.feelburst.yayoi.model.window {
-
-	Window
-}
-import it.feelburst.yayoi.model.listener {
-
-	Listener
-}
-
-shared alias ComponentDecl =>
-	ClassDeclaration|FunctionDeclaration|ValueDeclaration;
-shared alias ActionDecl =>
-	FunctionDeclaration;
 
 "Manage application startup and shutdown, register components,
  execute reactions and actions"
@@ -105,11 +92,14 @@ by("Filippo Vitanza")
 shared final class Yayoi(
 	"User defined app declaration"
 	ClassDeclaration appType,
+	"User defined logger configuration"
+	void configLogger() =>
+		noop(),
 	"User defined logger writer"
 	void writeLog(
-		Priority priority, Category category, 
+		Priority priority, Category category,
 		String message, Throwable? throwable) =>
-			package.defaultWriteLog(priority, category, message, throwable))
+		package.defaultWriteLog(priority, category, message, throwable))
 	satisfies Runnable {
 	
 	assert (exists appAnn = annotations(`YayoiAnnotation`, appType));
@@ -118,6 +108,7 @@ shared final class Yayoi(
 	
 	shared actual void run() {
 		addLogWriter(writeLog);
+		configLogger();
 		log.info("Application startup...");
 		value context = AnnotationConfigApplicationContext();
 		registerFrameworkImpl(context);
@@ -129,30 +120,32 @@ shared final class Yayoi(
 			log.info("Base package '``pckg``' found."));
 		registerComponents(context);
 		log.info("Executing reactions...");
-		executeReaction(context);
+		executeReactions(context);
 		log.info("Executing actions...");
-		executeAction(context);
+		executeActions(context);
 		log.info("Registering app...");
-		value appInstance = registerApp(context);
+		value invokeApp = registerApp(context);
 		log.info("Running app...");
-		invokeApp(appInstance);
+		invokeApp();
 		log.info("Waiting for window to close...");
 		waitForWindowsToClose();
 		value eventPublisher = context
 			.getBean(classForType<ApplicationEventPublisher>());
-		eventPublisher.publishEvent(ShutdownRequested(this));
+		eventPublisher.publishEvent(ShutdownRequested());
 	}
 	
-	void registerFrameworkImpl(AnnotationConfigApplicationContext context) =>
+	void registerFrameworkImpl(AnnotationConfigApplicationContext context) {
+		assert (is Framework frameworkImpl = this.frameworkImpl.get());
 		context.beanFactory
-		.registerSingleton("frameworkImpl", javaString(frameworkImpl));
+			.registerSingleton("frameworkImpl", frameworkImpl);
+	}
 	
 	void registerComponents(AnnotationConfigApplicationContext context) =>
 		context
-		.getBean(classForType<ComponentRegister>())
+		.getBean(classForType<ComponentRegistry>())
 		.registerByPackages(*basePackages);
 	
-	void executeReaction(AnnotationConfigApplicationContext context) {
+	void executeReactions(AnnotationConfigApplicationContext context) {
 		value executorService = context
 			.getBean(classForType<ExecutorService>());
 		context
@@ -161,42 +154,59 @@ shared final class Yayoi(
 		.each((String name) =>
 			let (reactor = context.getBean(name,classForType<Reactor>()))
 			reactor
-			.reactions
+			.reactions<>()
 			.each((Reaction<> reaction) {
-				if (is Dependent reaction) {
-					executorService.execute(() {
-						reaction.awaitIndependent();
+				try {
+					if (is Dependent reaction) {
+						executorService.submit(() {
+							reaction.awaitIndependent();
+							reaction.execute();
+						});
+					}
+					else {
 						reaction.execute();
-					});
+					}
 				}
-				else {
-					reaction.execute();
+				catch (Exception e) {
+					log.error(
+						"Reaction '``classDeclaration(reaction).name``' on component " +
+						"'``reaction.cmp``' failed executing due to the following error: " +
+						"``e.message``");
 				}
 			}));
 	}
 	
-	void executeAction(AnnotationConfigApplicationContext context) =>
+	void executeActions(AnnotationConfigApplicationContext context) =>
 		context.getBean("actionContext",classForType<ActionContext>())
 		.values()
-		.each((String name) =>
-			let (action = context.getBean(name,classForType<Action>()))
-			action.execute());
+		.each((String name) {
+			value action = context.getBean(name,classForType<Action>());
+			try {
+				action.execute();
+			}
+			catch (Exception e) {
+				log.error(
+					"Action '``classDeclaration(action).name``' on declaration " +
+					"'``action.decl``' failed executing due to the following error: " +
+					"``e.message``");
+			}
+		});
 	
-	Runnable registerApp(AnnotationConfigApplicationContext context) {
+	Anything() registerApp(AnnotationConfigApplicationContext context) {
 		context.registerBeanDefinition("application", object extends GenericBeanDefinition() {
-			setBeanClass(javaClassFromDeclaration(appType));
+			setBeanClass(classForDeclaration(appType));
 			lazyInit = false;
 			abstract = false;
 			autowireCandidate = true;
 			scope = "singleton";
 		});
 		assert (is Runnable appInstance =
-			context.getBean(javaClassFromDeclaration(appType)));
-		return appInstance;
+			context.getBean(classForDeclaration(appType)));
+		value executorService = context
+			.getBean(classForType<ExecutorService>());
+		return () =>
+			executorService.execute(appInstance);
 	}
-	
-	void invokeApp(Runnable appInstance) =>
-		invokeLater(appInstance);
 	
 	void waitForWindowsToClose() =>
 		awtThread.join();

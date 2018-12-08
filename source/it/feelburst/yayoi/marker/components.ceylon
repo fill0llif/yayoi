@@ -1,33 +1,74 @@
-import it.feelburst.yayoi {
+import ceylon.language.meta.declaration {
+	InterfaceDeclaration,
+	FunctionDeclaration,
+	ValueDeclaration,
+	ClassDeclaration
+}
 
-	ComponentDecl
+import it.feelburst.yayoi.model.component {
+	Component
+}
+import it.feelburst.yayoi.model.container {
+	Container,
+	Layout
+}
+import it.feelburst.yayoi.model.listener {
+	Listener
+}
+import it.feelburst.yayoi.model.window {
+	Window
 }
 shared final sealed annotation class ComponentAnnotation()
-		satisfies OptionalAnnotation<ComponentAnnotation,ComponentDecl> {}
+	satisfies OptionalAnnotation<
+		ComponentAnnotation,
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration>&Marker {
+	shared actual InterfaceDeclaration marked =>
+		`interface Component`;
+}
 
 shared final sealed annotation class ContainerAnnotation()
-		satisfies OptionalAnnotation<ContainerAnnotation,ComponentDecl> {}
+	satisfies OptionalAnnotation<
+		ContainerAnnotation,
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration>&Marker {
+	shared actual InterfaceDeclaration marked =>
+		`interface Container`;
+}
 
 shared final sealed annotation class WindowAnnotation()
-		satisfies OptionalAnnotation<WindowAnnotation,ComponentDecl> {}
+	satisfies OptionalAnnotation<
+		WindowAnnotation,
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration>&Marker {
+	shared actual InterfaceDeclaration marked =>
+		`interface Window`;
+}
 
 shared final sealed annotation class LayoutAnnotation()
-		satisfies OptionalAnnotation<LayoutAnnotation,ComponentDecl> {}
+	satisfies OptionalAnnotation<
+		LayoutAnnotation,
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration>&Marker {
+	shared actual InterfaceDeclaration marked =>
+		`interface Layout`;
+}
 
 shared final sealed annotation class ListenerAnnotation()
-		satisfies OptionalAnnotation<ListenerAnnotation,ComponentDecl> {}
+	satisfies OptionalAnnotation<
+		ListenerAnnotation,
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration>&Marker {
+	shared actual InterfaceDeclaration marked =>
+		`interface Listener`;
+}
 
 shared annotation ComponentAnnotation component() =>
-		ComponentAnnotation();
+	ComponentAnnotation();
 
 shared annotation ContainerAnnotation container() =>
-		ContainerAnnotation();
+	ContainerAnnotation();
 
 shared annotation WindowAnnotation window() =>
-		WindowAnnotation();
+	WindowAnnotation();
 
 shared annotation LayoutAnnotation layout() =>
-		LayoutAnnotation();
+	LayoutAnnotation();
 
 shared annotation ListenerAnnotation listener() =>
-		ListenerAnnotation();
+	ListenerAnnotation();

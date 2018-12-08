@@ -1,6 +1,8 @@
 import ceylon.language.meta.declaration {
 	Package,
-	ClassDeclaration
+	ClassDeclaration,
+	InterfaceDeclaration,
+	ValueDeclaration
 }
 import ceylon.language.meta.model {
 	Method
@@ -12,8 +14,8 @@ shared interface ModelReaction<in Container=Nothing,out Type=Anything,in Argumen
 }
 
 shared interface Order {
-	shared default Integer highestPrecedence => runtime.minIntegerValue;
-	shared default Integer lowestPrecedence => runtime.maxIntegerValue;
+	shared Integer highestPrecedence => runtime.minIntegerValue;
+	shared Integer lowestPrecedence => runtime.maxIntegerValue;
 	shared formal Integer order;
 }
 
@@ -29,12 +31,28 @@ shared interface PackageDependent {
 	shared formal String pckg;
 }
 
+shared interface Marker {
+	shared formal InterfaceDeclaration marked;
+}
+
 shared final sealed annotation class YayoiAnnotation(
 	shared {Package+} basePackages,
-	shared String frameworkImpl = "swing")
-		satisfies OptionalAnnotation<YayoiAnnotation,ClassDeclaration> {}
+	shared ValueDeclaration frameworkImpl)
+	satisfies OptionalAnnotation<YayoiAnnotation,ClassDeclaration> {}
+
+shared final sealed annotation class NamedAnnotation(
+	shared String name,
+	shared actual String pckg)
+	satisfies
+		OptionalAnnotation<NamedAnnotation,ValueDeclaration>&
+		PackageDependent {}
 
 shared annotation YayoiAnnotation yayoi(
 	{Package+} basePackages,
-	String frameworkImpl = "swing") =>
-		YayoiAnnotation(basePackages, frameworkImpl);
+	ValueDeclaration frameworkImpl) =>
+	YayoiAnnotation(basePackages, frameworkImpl);
+
+shared annotation NamedAnnotation named(
+	String name,
+	String pckg = "") =>
+	NamedAnnotation(name,pckg);

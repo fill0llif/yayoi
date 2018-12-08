@@ -1,7 +1,4 @@
-import java.awt {
-	LayoutManager
-}
-shared interface WithLayout<out Type=LayoutManager>
-	given Type satisfies LayoutManager {
+shared sealed interface WithLayout<Type>
+	given Type satisfies Object {
 	shared formal Layout<Type>? layout;
 }

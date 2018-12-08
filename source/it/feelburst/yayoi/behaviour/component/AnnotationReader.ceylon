@@ -1,7 +1,9 @@
-import it.feelburst.yayoi {
-	ComponentDecl,
-	ActionDecl
+import ceylon.language.meta.declaration {
+	FunctionDeclaration,
+	ValueDeclaration,
+	ClassDeclaration
 }
+
 import it.feelburst.yayoi.behaviour.action {
 	Action
 }
@@ -11,7 +13,8 @@ import it.feelburst.yayoi.marker {
 	WindowAnnotation,
 	ListenerAnnotation,
 	DoLayoutAnnotation,
-	LayoutAnnotation
+	LayoutAnnotation,
+	SetLookAndFeelAnnotation
 }
 import it.feelburst.yayoi.model.component {
 	Component
@@ -34,11 +37,13 @@ see(
 	`interface Listener`,
 	`interface Layout`,
 	`interface Action`)
-shared interface AnnotationChecker {
-	"Check if it's a component"
+shared sealed interface AnnotationReader {
+	"Get a component annotation if it is"
 	shared formal
 		ComponentAnnotation|ContainerAnnotation|WindowAnnotation|
-		LayoutAnnotation|ListenerAnnotation? component(ComponentDecl decl);
-	"Check if it's an action"
-	shared formal DoLayoutAnnotation? action(ActionDecl decl);
+		LayoutAnnotation|ListenerAnnotation? component(
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl);
+	"Get an action annotation if it is"
+	shared formal DoLayoutAnnotation|SetLookAndFeelAnnotation? action(
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl);
 }

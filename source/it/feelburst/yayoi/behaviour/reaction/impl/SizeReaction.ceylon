@@ -9,13 +9,22 @@ import it.feelburst.yayoi.model.component {
 	AbstractComponent
 }
 import it.feelburst.yayoi.model.concurrent {
-	Condition,
 	Lock
 }
+
+import java.util.concurrent.locks {
+	Condition
+}
+
+import org.springframework.context {
+	ApplicationContext
+}
+
 "A reaction that sets the size of a component"
 shared class SizeReaction(
 	shared actual AbstractComponent cmp,
-	shared actual SizeAnnotation ann)
+	shared actual SizeAnnotation ann,
+	ApplicationContext context)
 	satisfies Reaction<AbstractComponent>&Independent {
 	value depender = IndependentImpl();
 	shared actual Lock lock =>
@@ -27,7 +36,7 @@ shared class SizeReaction(
 	shared actual void execute() {
 		value setSize = ann.agentMdl(cmp);
 		setSize(ann.width, ann.height);
-		log.debug("Size (``ann.width``,``ann.height``) set requested for Component '``cmp``'.");
+		log.debug("Reaction: Size (``ann.width``,``ann.height``) set requested for Component '``cmp``'.");
 	}
 	
 }

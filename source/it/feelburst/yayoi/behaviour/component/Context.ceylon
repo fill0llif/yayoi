@@ -14,7 +14,7 @@ import org.springframework.context {
 	ApplicationContext
 }
 "General purpose in-memory context"
-shared interface Context<Object> {
+shared sealed interface Context<Object> {
 	"Context name"
 	shared formal String name;
 	shared formal ApplicationContext context;
@@ -23,7 +23,10 @@ shared interface Context<Object> {
 	shared formal void register(Object val);
 	"Context objects"
 	shared default Object[] values() =>
-		context
-		.getBean(name,classForType<MutableSet<Object>>())
-		.sequence();
+		if (context.containsBean(name)) then
+			context
+			.getBean(name,classForType<MutableSet<Object>>())
+			.sequence()
+		else
+			[];
 }

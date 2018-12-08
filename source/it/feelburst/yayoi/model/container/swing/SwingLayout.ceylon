@@ -5,33 +5,20 @@ import ceylon.language.meta.declaration {
 }
 
 import it.feelburst.yayoi.model {
-	Source
+	Value
 }
 import it.feelburst.yayoi.model.container {
 	Layout
 }
-
-import java.awt {
-	LayoutManager
-}
-
-import org.springframework.context {
-	ApplicationEvent
+import it.feelburst.yayoi.model.impl {
+	AbstractNamedValue
 }
 "Swing implementation of a layout"
-shared class SwingLayout<out Type>(
-	shared actual String name,
-	Source<Type> source,
-	void publishEvent(ApplicationEvent event))
+shared final class SwingLayout<Type>(
+	String name,
+	ClassDeclaration|FunctionDeclaration|ValueDeclaration|Null declaration,
+	Value<Type> vl,
+	void publishEvent(Object event))
+	extends AbstractNamedValue<Type>(name,declaration,vl) 
 	satisfies Layout<Type>
-	given Type satisfies LayoutManager {
-	
-	shared actual ClassDeclaration|FunctionDeclaration|ValueDeclaration decl =>
-		source.decl;
-	
-	shared actual Type val =>
-		source.val;
-	
-	shared actual String string =>
-		name;
-}
+	given Type satisfies Object {}

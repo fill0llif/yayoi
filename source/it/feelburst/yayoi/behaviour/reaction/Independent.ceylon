@@ -1,6 +1,9 @@
 import it.feelburst.yayoi.model.concurrent {
-	Condition,
 	Lock
+}
+
+import java.util.concurrent.locks {
+	Condition
 }
 "Independent property of reaction.
  An independent reaction on which another reaction depends

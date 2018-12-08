@@ -1,3 +1,6 @@
+import it.feelburst.yayoi.behaviour.component {
+	NameResolver
+}
 import it.feelburst.yayoi.behaviour.reaction {
 	Reaction
 }
@@ -9,10 +12,6 @@ import it.feelburst.yayoi.model.container {
 	Layout
 }
 
-import java.awt {
-	LayoutManager,
-	JContainer=Container
-}
 import java.lang {
 	Types {
 		classForType
@@ -22,23 +21,19 @@ import java.lang {
 import org.springframework.context {
 	ApplicationContext
 }
-import it.feelburst.yayoi.behaviour.component {
-
-	NameResolver
-}
 "A reaction that sets the layout of a container"
 shared class WithLayoutReaction(
-	shared actual Container<JContainer,LayoutManager> cmp,
+	shared actual Container<Object,Object> cmp,
 	shared actual WithLayoutAnnotation ann,
 	ApplicationContext context)
-	satisfies Reaction<Container<JContainer,LayoutManager>> {
+	satisfies Reaction<Container<Object,Object>> {
 	shared actual void execute() {
 		value nmRslvr = context.getBean(classForType<NameResolver>());
 		value containingPckg = nmRslvr.resolveRoot(cmp.decl,ann);
 		value lytName = "``containingPckg``.``ann.layout``";
-		value lyt = context.getBean(lytName,classForType<Layout<LayoutManager>>());
+		value lyt = context.getBean(lytName,classForType<Layout<Object>>());
 		value setLayout = ann.agentMdl(cmp);
 		setLayout(lyt);
-		log.info("Layout '``lyt``' set for Container '``cmp``'.");
+		log.debug("Reaction: Layout '``lyt``' set requested for Container '``cmp``'.");
 	}
 }

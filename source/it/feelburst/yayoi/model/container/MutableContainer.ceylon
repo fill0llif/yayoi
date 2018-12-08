@@ -20,14 +20,12 @@ shared class MutableContainer()
 	shared actual AbstractComponent[] components =>
 		cmps
 		.items
-		.sort((AbstractComponent x, AbstractComponent y) =>
-			x.name <=> y.name)
 		.sequence();
 	
 	shared actual void addComponent(AbstractComponent component) =>
 		cmps[component.name] = component;
 	
-	shared actual void removeComponent(String name) =>
+	shared actual AbstractComponent? removeComponent(String name) =>
 		cmps.remove(name);
 	
 }

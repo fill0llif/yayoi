@@ -2,8 +2,10 @@ import it.feelburst.yayoi.behaviour.reaction {
 	Independent
 }
 import it.feelburst.yayoi.model.concurrent {
-	Condition,
 	Lock
+}
+import java.util.concurrent.locks {
+	Condition
 }
 shared class IndependentImpl()
 		satisfies Independent {

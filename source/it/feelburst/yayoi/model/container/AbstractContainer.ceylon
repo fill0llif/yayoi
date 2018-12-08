@@ -6,5 +6,5 @@ import it.feelburst.yayoi.model.component {
 "Component representing states and behaviours of a container
  that can contain multiple components"
 see(`interface AbstractComponent`)
-shared interface AbstractContainer
+shared sealed interface AbstractContainer
 	satisfies AbstractComponent&ComponentAccessor&ComponentMutator {}

@@ -8,18 +8,15 @@ import it.feelburst.yayoi.model.window {
 	Window
 }
 
-import javax.swing {
-	JFrame
-}
 "A reaction that sets exit application
  as a default window close operation"
 shared class ExitOnCloseReaction(
-	shared actual Window<JFrame> cmp,
+	shared actual Window<Object> cmp,
 	shared actual ExitOnCloseAnnotation ann)
-	satisfies Reaction<Window<JFrame>> {
+	satisfies Reaction<Window<Object>> {
 	shared actual void execute() {
 		value setExitOnClose = ann.agentMdl(cmp);
 		setExitOnClose();
-		log.debug("ExitOnClose operation requested for Component '``cmp``'.");
+		log.debug("Reaction: ExitOnClose operation requested for Window '``cmp``'.");
 	}
 }

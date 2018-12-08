@@ -15,6 +15,6 @@ shared class LocationReaction(
 	shared actual void execute() {
 		value setLocation = ann.agentMdl(cmp);
 		setLocation(ann.x, ann.y);
-		log.debug("Location set at (``ann.x``,``ann.y``) requested for Component '``cmp``'.");
+		log.debug("Reaction: Location set at (``ann.x``,``ann.y``) requested for Component '``cmp``'.");
 	}
 }

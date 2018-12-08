@@ -17,8 +17,9 @@ see(
 	`interface Container`,
 	`interface Window`,
 	`interface Reaction`)
-shared interface Reactor {
-	shared formal Reaction<>[] reactions;
+shared sealed interface Reactor {
+	shared formal Reaction<Type>[] reactions<Type=Object>()
+		given Type satisfies Object;
 	shared formal void addReaction(Reaction<> reaction);
 	shared formal void setReactions(Reaction<>[] reactions);
 }

@@ -1,3 +1,6 @@
+import it.feelburst.yayoi.behaviour.listener.model {
+	ShutdownRequested
+}
 import it.feelburst.yayoi.marker {
 	listener
 }
@@ -13,16 +16,12 @@ import org.springframework.beans.factory.annotation {
 import org.springframework.context {
 	ApplicationEventPublisher
 }
-import it.feelburst.yayoi.behaviour.listener.model {
-
-	ShutdownRequested
-}
 listener
-shared class DefaultWindowClosedAdapter() extends WindowAdapter() {
+shared class DefaultWindowClosingAdapter() extends WindowAdapter() {
 	
 	autowired
 	late ApplicationEventPublisher eventPublisher;
 	
-	shared actual void windowClosing(WindowEvent? e) =>
-		eventPublisher.publishEvent(ShutdownRequested(this));
+	shared actual void windowClosing(WindowEvent e) =>
+		eventPublisher.publishEvent(ShutdownRequested());
 }

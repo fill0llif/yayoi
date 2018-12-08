@@ -5,7 +5,10 @@ import ceylon.language.meta.declaration {
 }
 
 import it.feelburst.yayoi.model {
-	Source
+	Value
+}
+import it.feelburst.yayoi.model.impl {
+	AbstractNamedValue
 }
 import it.feelburst.yayoi.model.listener {
 	Listener
@@ -14,25 +17,12 @@ import it.feelburst.yayoi.model.listener {
 import java.util {
 	EventListener
 }
-
-import org.springframework.context {
-	ApplicationEvent
-}
 "Awt implementation of a listener"
-shared class AwtListener<Lstnr=EventListener>(
-	shared actual String name,
-	Source<Lstnr> source,
-	void publishEvent(ApplicationEvent event))
-	satisfies Listener<Lstnr>
-	given Lstnr satisfies EventListener {
-	
-	shared actual ClassDeclaration|FunctionDeclaration|ValueDeclaration decl =>
-		source.decl;
-	
-	shared actual Lstnr val =>
-		source.val;
-	
-	shared actual String string =>
-		name;
-	
-}
+shared final class AwtListener<Type>(
+	String name,
+	ClassDeclaration|FunctionDeclaration|ValueDeclaration|Null declaration,
+	Value<Type> vl,
+	void publishEvent(Object event))
+	extends AbstractNamedValue<Type>(name,declaration,vl)
+	satisfies Listener<Type>
+	given Type satisfies EventListener {}

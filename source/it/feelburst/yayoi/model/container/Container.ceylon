@@ -1,24 +1,23 @@
 import it.feelburst.yayoi.model {
-	Source,
-	Reactor
+	Declaration,
+	Reactor,
+	Value
 }
-import it.feelburst.yayoi.model.component {
-	Hierarchical
-}
-
-import java.awt {
-	JContainer=Container,
-	LayoutManager
+import it.feelburst.yayoi.model.visitor {
+	Visitor
 }
 
 "A container that can be rendered on screen within a container
  and that can render its components using a layout manager"
-shared interface Container<out Type=JContainer,LayoutType=LayoutManager>
+shared interface Container<out Type,LayoutType>
 	satisfies
 		AbstractContainer&
-		Hierarchical&
 		MutableWithLayout<LayoutType>&
-		Source<Type>&
+		Declaration&
+		Value<Type>&
 		Reactor
-	given Type satisfies JContainer
-	given LayoutType satisfies LayoutManager {}
+	given Type satisfies Object
+	given LayoutType satisfies Object {
+	shared actual void accept(Visitor visitor) =>
+		visitor.visitContainer(this);
+}

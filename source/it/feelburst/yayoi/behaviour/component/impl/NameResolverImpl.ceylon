@@ -7,13 +7,9 @@ import ceylon.language.meta.declaration {
 	ClassDeclaration
 }
 
-import it.feelburst.yayoi {
-	ComponentDecl,
-	ActionDecl
-}
 import it.feelburst.yayoi.behaviour.component {
 	NameResolver,
-	AnnotationChecker
+	AnnotationReader
 }
 import it.feelburst.yayoi.marker {
 	WindowAnnotation,
@@ -23,7 +19,9 @@ import it.feelburst.yayoi.marker {
 	ListenerAnnotation,
 	DoLayoutAnnotation,
 	LayoutAnnotation,
-	PackageDependent
+	PackageDependent,
+	SetLookAndFeelAnnotation,
+	NamedAnnotation
 }
 
 import org.springframework.beans.factory.annotation {
@@ -37,33 +35,36 @@ component
 shared class NameResolverImpl() satisfies NameResolver {
 	
 	autowired
-	late AnnotationChecker annotationChecker;
+	late AnnotationReader annotationChecker;
 	
 	shared actual String|Exception resolve(
-		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) {
-		if (exists cmpAnn = annotationChecker.component(decl)) {
-			return resolveComponent(decl,cmpAnn);
-		}
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) =>
+		if (exists ann = annotationChecker.component(decl)) then
+			resolveComponent(decl,ann)
 		else if (
-			is ActionDecl decl,
-			exists actAnn = annotationChecker.action(decl)) {
-			return resolveAction(decl,actAnn);
-		}
-		else {
-			return Exception("Declaration '``decl``' is neither a component nor an action.");
-		}
-	}
+			is FunctionDeclaration decl,
+			exists ann = annotationChecker.action(decl)) then
+			resolveAction(decl,ann)
+		else
+			Exception(
+				"Name cannot be resolved. Declaration '``decl``' is neither a component nor an action.");
 	
-	String resolveComponent(
-		ComponentDecl decl,
+	String|Exception resolveComponent(
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl,
 		ComponentAnnotation|ContainerAnnotation|WindowAnnotation|
-		LayoutAnnotation|ListenerAnnotation cmpAnn) {
-		switch (cmpAnn)
+		LayoutAnnotation|ListenerAnnotation ann) {
+		switch (ann)
 		case (is WindowAnnotation|LayoutAnnotation|ListenerAnnotation) {
 			return "``resolveRoot(decl)``.``resolveUnbound(decl)``";
 		}
 		else {
-			return "``resolveRoot(decl)``.``resolveComponentChild(decl)``";
+			value cmp = resolveComponentChild(decl);
+			if (is String cmp) {
+				return "``resolveRoot(decl)``.``cmp``";
+			}
+			else {
+				return cmp;
+			}
 		}
 	}
 	
@@ -77,10 +78,7 @@ shared class NameResolverImpl() satisfies NameResolver {
 	shared actual String resolveUnbound(
 		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) {
 		switch(decl)
-		case(is ClassDeclaration) {
-			return "``decl.name``()";
-		}
-		case(is FunctionDeclaration) {
+		case(is ClassDeclaration|FunctionDeclaration) {
 			return "``decl.name``()";
 		}
 		case(is ValueDeclaration) {
@@ -88,21 +86,45 @@ shared class NameResolverImpl() satisfies NameResolver {
 		}
 	}
 	
-	String resolveAction(ActionDecl decl, DoLayoutAnnotation actAnn) =>
-		"``resolveRoot(decl,actAnn)``.``actAnn.container``.``resolveUnbound(decl)``";
+	String resolveAction(
+		FunctionDeclaration decl, 
+		DoLayoutAnnotation|SetLookAndFeelAnnotation ann) =>
+		if (is SetLookAndFeelAnnotation ann) then
+			"``resolveRoot(decl)``.``resolveUnbound(decl)``"
+		else
+			"``resolveRoot(decl,ann)``.``ann.container``.``resolveUnbound(decl)``";
 	
-	String resolveComponentChild(ComponentDecl decl) {
-		if (exists prntAnn = annotations(`ParentAnnotation`,decl)) {
-			assert (is ComponentDecl parent =
+	String|Exception resolveComponentChild(
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) =>
+		if (exists prntAnn = annotations(`ParentAnnotation`,decl)) then
+			if (exists parent =
 				decl.containingPackage
-				.members<ComponentDecl>()
-				.find((ComponentDecl cmp) =>
+				.members<ClassDeclaration|FunctionDeclaration|ValueDeclaration>()
+				.find((ClassDeclaration|FunctionDeclaration|ValueDeclaration cmp) =>
 					let (prntName = prntAnn.name.substring(prntAnn.name.lastIndexOf(".") + 1))
-					resolveUnbound(cmp) == prntName));
-			return "``resolveComponentChild(parent)``.``resolveUnbound(decl)``";
-		} else {
-			return resolveUnbound(decl);
-		}
-	}
+					resolveUnbound(cmp) == prntName)) then
+				let (prnt = resolveComponentChild(parent))
+				if (is String prnt) then
+					"``prnt``.``resolveUnbound(decl)``"
+				else
+					prnt
+			else
+				Exception(
+					"Component name for '``decl``' cannot be resolved. Parent not found. " +
+					"As a reminder, a component name is defined by its object's name or method/class's name " +
+					"followed by round brackets (e.g. 'shared object main extends JFrame() {}' " +
+					"-> 'main', 'shared JPanel panel() => JPanel();' -> 'panel()', etc.")
+		else
+			resolveUnbound(decl);
+	
+	shared actual String resolveNamed(
+		FunctionDeclaration decl, 
+		NamedAnnotation named) =>
+		let (containingPckg =
+			if (!named.pckg.empty) then
+				named.pckg
+			else
+				decl.containingPackage.name)
+		"``containingPckg``.``named.name``";
 	
 }

@@ -5,42 +5,27 @@ import ceylon.language.meta.declaration {
 }
 
 import it.feelburst.yayoi.behaviour.listener.model {
-	TitleSet,
 	Packed,
 	Centered,
-	ExitOnCloseSet,
 	Closed,
-	Restored,
-	Maximized,
-	Iconified,
-	SizeSet,
-	VisibleSet,
 	LocationSet,
-	IndependentDoneExecuting
-}
-import it.feelburst.yayoi.behaviour.reaction {
-	Reaction
-}
-import it.feelburst.yayoi.behaviour.reaction.impl {
-	SizeReaction
+	ExitOnCloseSet,
+	Iconified,
+	Maximized,
+	Restored,
+	TitleSet
 }
 import it.feelburst.yayoi.model {
-	Source
+	Value
 }
 import it.feelburst.yayoi.model.awt {
 	AwtContainer
 }
-import it.feelburst.yayoi.model.component {
-	AbstractComponent
-}
 import it.feelburst.yayoi.model.container {
 	AbstractContainer
 }
-import it.feelburst.yayoi.model.impl {
-	ReactorImpl
-}
-import it.feelburst.yayoi.model.listener {
-	Listener
+import it.feelburst.yayoi.model.container.swing {
+	AbstractSwingContainer
 }
 import it.feelburst.yayoi.model.window {
 	Window,
@@ -56,119 +41,110 @@ import it.feelburst.yayoi.model.window.swing {
 import java.awt {
 	Toolkit {
 		defaultToolkit
-	}
-}
-import java.util {
-	EventListener
+	},
+	Wndw=Window
 }
 
 import javax.swing {
+	SwingUtilities {
+		invokeLater
+	},
+	JWindow,
 	JFrame {
 		exitOnClose
 	},
-	SwingUtilities {
-		invokeLater
-	}
-}
-
-import org.springframework.context {
-	ApplicationEvent
+	JDialog
 }
 "Swing implementation of a window"
-shared class SwingWindow<out Type=JFrame>(
-	shared actual String name,
-	Source<Type> source,
-	void publishEvent(ApplicationEvent event))
-		satisfies Window<Type>
-		given Type satisfies JFrame {
+shared final class SwingWindow<Type>(
+	String name,
+	ClassDeclaration|FunctionDeclaration|ValueDeclaration|Null declaration,
+	Value<Type> vl,
+	void publishEvent(Object event))
+	extends AbstractSwingContainer<Type>(name,declaration,vl,publishEvent)
+	satisfies Window<Type>
+	given Type satisfies Wndw {
 	
-	value awtContainer = AwtContainer(name,source,publishEvent);
-	value reactor = ReactorImpl();
+	value awtContainer = AwtContainer(name,vl,publishEvent);
 	
-	shared actual AbstractContainer? parent =>
-		null;
+	late variable WindowState windowState = nrmal;
 	
-	shared actual void setParent(AbstractContainer? parent) {}
+	shared actual WindowState state {
+		switch (vl = val)
+		case (is JFrame) {
+			assert (exists state = stateCodes[vl.extendedState]);
+			return state;
+		}
+		case (is JDialog) {
+			return windowState;
+		}
+		case (is JWindow) {
+			return windowState;
+		}
+		else {
+			value message =
+				"SwingWindow state cannot be retrieved. " +
+				"SwingWindow has not been constructed accordingly. " +
+				"SwingWindow may be used only with JFrame, JDialog or JWindow.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
 	shared actual AbstractContainer? root =>
 		this;
 	
-	shared actual WindowState|Exception state =>
-		if (exists state = stateCodes[source.val.extendedState]) then state
-		else Exception();
-	
-	shared actual String title =>
-		source.val.title;
+	shared actual String? title {
+		switch (vl = val)
+		case (is JFrame) {
+			return vl.title;
+		}
+		case (is JDialog) {
+			return vl.title;
+		}
+		case (is JWindow) {
+			return null;
+		}
+		else {
+			value message =
+				"SwingWindow title cannot be retrieved. " +
+				"SwingWindow has not been constructed accordingly. " +
+				"SwingWindow may be used only with JFrame, JDialog or JWindow.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
 	shared actual void setTitle(String title) {
-		value srcVal = val;
-		invokeLater(() {
-			srcVal.title = title;
-			publishEvent(TitleSet(this,title));
-			log.info("Title '``title``' set for Component '``this``'.");
-		});
-	}
-	
-	shared actual Integer x =>
-		awtContainer.x;
-	
-	shared actual Integer y =>
-		awtContainer.y;
-	
-	shared actual Integer width =>
-		awtContainer.width;
-	
-	shared actual Integer height =>
-		awtContainer.height;
-	
-	shared actual Boolean visible =>
-		awtContainer.visible;
-	
-	shared actual void setVisible(Boolean visible) {
-		// component must load the internal component before
-		// entering the AwtEvent queue
-		suppressWarnings("unusedDeclaration")
-		value srcVal = val;
-		invokeLater(() {
-			awtContainer.setVisible(visible);
-			publishEvent(VisibleSet(this, visible));
-			log.debug(
-				"Component '``this``' is now " +
-				"``visible then "" else "not "``visible.");
-		});
-	}
-	
-	shared actual void setLocation(Integer x, Integer y) {
-		// component must load the internal component before
-		// entering the AwtEvent queue
-		suppressWarnings("unusedDeclaration")
-		value srcVal = val;
-		invokeLater(() {
-			awtContainer.setLocation(x, y);
-			publishEvent(LocationSet(this,x,y));
-			log.info("Location set at (``x``,``y``) for Component '``this``'.");
-		});
-	}
-	
-	shared actual void setSize(Integer width, Integer height) {
-		// component must load the internal component before
-		// entering the AwtEvent queue
-		suppressWarnings("unusedDeclaration")
-		value srcVal = val;
-		invokeLater(() {
-			awtContainer.setSize(width, height);
-			publishEvent(SizeSet(this,width,height));
-			publishEvent(IndependentDoneExecuting(
-				this,
-				(Reaction<Object> rctn) =>
-					rctn is SizeReaction));
-			log.info("Size (``width``,``height``) set for Component '``this``'.");
-		});
+		switch (vl = val)
+		case (is JFrame) {
+			invokeLater(() {
+				vl.title = title;
+				publishEvent(TitleSet(this,title));
+				log.debug("GUIEvent: Title '``title``' set for SwingWindow '``this``'.");
+			});
+		}
+		case (is JDialog) {
+			invokeLater(() {
+				vl.title = title;
+				publishEvent(TitleSet(this,title));
+				log.debug("GUIEvent: Title '``title``' set for SwingWindow '``this``'.");
+			});
+		}
+		case (is JWindow) {}
+		else {
+			value message =
+				"SwingWindow title cannot be set. " +
+				"SwingWindow has not been constructed accordingly. " +
+				"SwingWindow may be used only with JFrame, JDialog or JWindow.";
+			log.error(message);
+			throw Exception(message);
+		}
 	}
 	
 	shared actual void center() {
 		if (!visible) {
-			setVisible(true);
+			display();
 		}
 		value screenSize = defaultToolkit.screenSize;
 		value parentWidth = screenSize.width.integer;
@@ -178,45 +154,22 @@ shared class SwingWindow<out Type=JFrame>(
 		invokeLater(() {
 			awtContainer.setLocation(x, y);
 			publishEvent(LocationSet(this,x,y));
-			log.info("Location set at (``x``,``y``) for Component '``this``'.");
+			log.debug("GUIEvent: Location set at (``x``,``y``) for SwingWindow '``this``'.");
 			publishEvent(Centered(this));
-			log.info("Component '``this``' centered.");
+			log.debug("GUIEvent: SwingWindow '``this``' centered.");
 		});
 	}
 	
 	shared actual void pack() {
-		value srcVal = val;
+		value vl = val;
 		invokeLater(() {
-			srcVal.pack();
-			srcVal.repaint();
+			vl.pack();
+			vl.validate();
+			vl.repaint();
 			publishEvent(Packed(this));
-			log.debug("Component '``this``' is now packed.");
+			log.debug("GUIEvent: SwingWindow '``this``' is now packed.");
 		});
 	}
-	
-	shared actual AbstractComponent? component(String name) =>
-		awtContainer.component(name);
-	
-	shared actual AbstractComponent[] components =>
-		awtContainer.components;
-	
-	shared actual void addComponent(AbstractComponent component) =>
-		awtContainer.addComponent(component);
-	
-	shared actual void removeComponent(String name) =>
-		awtContainer.removeComponent(name);
-	
-	shared actual Listener<EventListener>[] listeners =>
-		awtContainer.listeners;
-	
-	shared actual Listener<EventListener>? listener(String name) =>
-		awtContainer.listener(name);
-	
-	shared actual void addListener(Listener<EventListener> listener) =>
-		awtContainer.addListener(listener);
-	
-	shared actual void removeListener(String name) =>
-		awtContainer.removeListener(name);
 	
 	shared actual Boolean opened =>
 		state != clsed && visible;
@@ -224,96 +177,188 @@ shared class SwingWindow<out Type=JFrame>(
 	shared actual Boolean normal =>
 		state == nrmal;
 	
-	shared actual Boolean iconified =>
-		state == icnified;
+	shared actual Boolean iconified {
+		switch (vl = val)
+		case (is JFrame) {
+			return state == icnified;
+		}
+		case (is JDialog|JWindow) {
+			return false;
+		}
+		else {
+			value message =
+				"SwingWindow iconified state cannot be retrieved. " +
+				"SwingWindow has not been constructed accordingly. " +
+				"SwingWindow may be used only with JFrame, JDialog or JWindow.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
-	shared actual Boolean maximized =>
-		state == mximized;
+	shared actual Boolean maximized {
+		switch (vl = val)
+		case (is JFrame) {
+			return state == mximized;
+		}
+		case (is JDialog|JWindow) {
+			return false;
+		}
+		else {
+			value message =
+				"SwingWindow maximized state cannot be retrieved. " +
+				"SwingWindow has not been constructed accordingly. " +
+				"SwingWindow may be used only with JFrame, JDialog or JWindow.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
 	shared actual Boolean closed =>
 		state == clsed;
 	
 	shared actual void iconify() {
-		if(!iconified) {
-			if(!visible) {
-				setVisible(true);
+		switch (vl = val)
+		case (is JFrame) {
+			if(!iconified) {
+				if(!visible) {
+					display();
+				}
+				invokeLater(() {
+					vl.extendedState = icnified.correspondence();
+					vl.validate();
+					vl.repaint();
+					publishEvent(Iconified(this));
+					log.debug("GUIEvent: SwingWindow '``this``' is now iconified.");
+				});
 			}
-			value srcVal = val;
-			invokeLater(() {
-				srcVal.extendedState = JFrame.iconified;
-				srcVal.repaint();
-				publishEvent(Iconified(this));
-				log.debug("Component '``this``' is now iconified.");
-			});
+		}
+		case (is JDialog) {}
+		case (is JWindow) {}
+		else {
+			value message =
+				"SwingWindow cannot be iconfied. " +
+				"SwingWindow has not been constructed accordingly. " +
+				"SwingWindow may be used only with JFrame, JDialog or JWindow.";
+			log.error(message);
+			throw Exception(message);
 		}
 	}
 	
 	shared actual void maximize() {
-		if(!maximized) {
-			if(!visible) {
-				setVisible(true);
+		switch (vl = val)
+		case (is JFrame) {
+			if(!maximized) {
+				if(!visible) {
+					display();
+				}
+				invokeLater(() {
+					vl.extendedState = mximized.correspondence();
+					vl.validate();
+					vl.repaint();
+					publishEvent(Maximized(this));
+					log.debug("GUIEvent: SwingWindow '``this``' is now maximized.");
+				});
 			}
-			value srcVal = val;
-			invokeLater(() {
-				srcVal.extendedState = JFrame.maximizedBoth;
-				srcVal.repaint();
-				publishEvent(Maximized(this));
-				log.debug("Component '``this``' is now maximized.");
-			});
+		}
+		case (is JDialog) {}
+		case (is JWindow) {}
+		else {
+			value message =
+				"SwingWindow cannot be maximized. " +
+				"SwingWindow has not been constructed accordingly. " +
+				"SwingWindow may be used only with JFrame, JDialog or JWindow.";
+			log.error(message);
+			throw Exception(message);
 		}
 	}
 	
 	shared actual void restore() {
-		if(iconified) {
-			if(!visible) {
-				setVisible(true);
+		switch (vl = val)
+		case (is JFrame) {
+			if(iconified) {
+				if(!visible) {
+					display();
+				}
+				invokeLater(() {
+					vl.extendedState = nrmal.correspondence();
+					vl.validate();
+					vl.repaint();
+					publishEvent(Restored(this));
+					log.debug("GUIEvent: SwingWindow '``this``' is now restored.");
+				});
 			}
-			value srcVal = val;
-			invokeLater(() {
-				srcVal.extendedState = JFrame.normal;
-				srcVal.repaint();
-				publishEvent(Restored(this));
-				log.debug("Component '``this``' is now restored.");
-			});
+		}
+		case (is JDialog) {}
+		case (is JWindow) {}
+		else {
+			value message =
+				"SwingWindow cannot be restored. " +
+				"SwingWindow has not been constructed accordingly. " +
+				"SwingWindow may be used only with JFrame, JDialog or JWindow.";
+			log.error(message);
+			throw Exception(message);
 		}
 	}
 	
 	shared actual void close() {
+		switch (vl = val)
+		case (is JFrame) {
+			internalFrameClose(vl);
+		}
+		case (is JDialog|JWindow) {
+			internalWindowAndDialogClose(vl);
+		}
+		else {
+			value message =
+				"SwingWindow cannot be closed. " +
+				"SwingWindow has not been constructed accordingly. " +
+				"SwingWindow may be used only with JFrame, JDialog or JWindow.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
+	
+	void internalFrameClose(JFrame val) {
 		if (!closed) {
-			value srcVal = val;
 			invokeLater(() {
-				srcVal.extendedState = clsed.correspondence();
-				srcVal.dispose();
+				val.extendedState = clsed.correspondence();
+				val.dispose();
 				publishEvent(Closed(this));
-				log.debug("Component '``this``' is now closed.");
+				log.debug("GUIEvent: SwingWindow '``this``' is now closed.");
+			});
+		}
+	}
+	
+	void internalWindowAndDialogClose(JDialog|JWindow val) {
+		if (!closed) {
+			windowState = clsed;
+			invokeLater(() {
+				val.dispose();
+				publishEvent(Closed(this));
+				log.debug("GUIEvent: SwingWindow '``this``' is now closed.");
 			});
 		}
 	}
 	
 	shared actual void setExitOnClose() {
-		value srcVal = val;
-		invokeLater(() {
-			srcVal.defaultCloseOperation = exitOnClose;
-			publishEvent(ExitOnCloseSet(this));
-			log.info("ExitOnClose operation set for Component '``this``'.");
-		});
+		switch (vl = val)
+		case (is JFrame) {
+			invokeLater(() {
+				vl.defaultCloseOperation = exitOnClose;
+				publishEvent(ExitOnCloseSet(this));
+				log.info("GUIEvent: ExitOnClose operation set for SwingWindow '``this``'.");
+			});
+		}
+		case (is JDialog) {}
+		case (is JWindow) {}
+		else {
+			value message =
+				"SwingWindow default close operation cannot be set as ExitOnClose. " +
+				"SwingWindow has not been constructed accordingly. " +
+				"SwingWindow may be used only with JFrame, JDialog or JWindow.";
+			log.error(message);
+			throw Exception(message);
+		}
 	}
 	
-	shared actual ClassDeclaration|FunctionDeclaration|ValueDeclaration decl =>
-		source.decl;
-	
-	shared actual Type val =>
-		source.val;
-	
-	shared actual Reaction<>[] reactions =>
-		reactor.reactions;
-	
-	shared actual void addReaction(Reaction<> reaction) =>
-		reactor.addReaction(reaction);
-	
-	shared actual void setReactions(Reaction<>[] reactions) =>
-		reactor.setReactions(reactions);
-	
-	shared actual String string =>
-		name;
 }
