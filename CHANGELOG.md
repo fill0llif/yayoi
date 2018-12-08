@@ -1,4 +1,4 @@
-# Yayoi ��悢
+# Yayoi やよい
 
 # Change Log
 

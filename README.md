@@ -1,4 +1,4 @@
-# Yayoi ��悢
+# Yayoi やよい
 _Yayoi_ is a GUI annotation framework and provides/allows:
 * Swing implementation of basic GUI components: _Component_, _Container_, _Window_, _Layout_ and _Listener_;
 * components are all lazily loaded;
