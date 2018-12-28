@@ -1,36 +1,17 @@
+import ceylon.language.meta {
+	classDeclaration
+}
+
 import it.feelburst.yayoi.marker {
 	Order
 }
-import it.feelburst.yayoi.model.window {
-
-	Window
-}
-import it.feelburst.yayoi.model.container {
-
-	Container,
-	Layout
-}
-import it.feelburst.yayoi.model.component {
-
-	Component
-}
-import it.feelburst.yayoi.model.listener {
-
-	Listener
-}
-import ceylon.language.meta {
-
-	classDeclaration
+import it.feelburst.yayoi.model {
+	Reactor
 }
 "A reaction arised from a component"
-see(
-	`interface Component`,
-	`interface Container`,
-	`interface Window`,
-	`interface Listener`,
-	`interface Layout`)
+see(`interface Reactor`)
 shared interface Reaction<out Cmpnt=Object>
-	satisfies Order
+	satisfies Order&Comparable<Reaction<Object>>
 	given Cmpnt satisfies Object {
 	"Component"
 	shared formal Cmpnt cmp;
@@ -43,6 +24,8 @@ shared interface Reaction<out Cmpnt=Object>
 		assert (is Order a = ann);
 		return a.order;
 	}
+	shared actual Comparison compare(Reaction<Object> other) =>
+		this.order <=> other.order;
 	shared actual String string =>
 		"``classDeclaration(this).name``(cmp = ``cmp``,ann = ``ann``, order = ``order``)";
 }

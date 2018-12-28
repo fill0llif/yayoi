@@ -17,7 +17,10 @@ import it.feelburst.yayoi.marker {
 	WindowAnnotation,
 	DoLayoutAnnotation,
 	LayoutAnnotation,
-	SetLookAndFeelAnnotation
+	LookAndFeelAnnotation,
+	CollectionAnnotation,
+	CollectValueAnnotation,
+	RemoveValueAnnotation
 }
 
 import org.springframework.stereotype {
@@ -28,29 +31,46 @@ component
 shared class AnnotationReaderImpl() satisfies AnnotationReader {
 	
 	shared actual
-		ComponentAnnotation|ContainerAnnotation|WindowAnnotation|
+		ComponentAnnotation|ContainerAnnotation|CollectionAnnotation|WindowAnnotation|
 		LayoutAnnotation|ListenerAnnotation? component(
 		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) =>
-		if (exists cmpAnn = annotations(`ComponentAnnotation`,decl)) then
-			cmpAnn
-		else if (exists cntAnn = annotations(`ContainerAnnotation`,decl)) then
-			cntAnn
-		else if (exists wndAnn = annotations(`WindowAnnotation`,decl)) then
-			wndAnn
-		else if (exists lytAnn = annotations(`LayoutAnnotation`,decl)) then
-			lytAnn
-		else if (exists lstAnn = annotations(`ListenerAnnotation`,decl)) then
-			lstAnn
+		if (exists ann = annotations(`ComponentAnnotation`,decl)) then
+			ann
+		else if (exists ann = annotations(`ContainerAnnotation`,decl)) then
+			ann
+		else if (exists ann = annotations(`CollectionAnnotation`,decl)) then
+			ann
+		else if (exists ann = annotations(`WindowAnnotation`,decl)) then
+			ann
+		else if (exists ann = annotations(`LayoutAnnotation`,decl)) then
+			ann
+		else if (exists ann = annotations(`ListenerAnnotation`,decl)) then
+			ann
 		else
 			null;
 	
-	shared actual DoLayoutAnnotation|SetLookAndFeelAnnotation? action(
+	shared actual DoLayoutAnnotation? action(
 		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) =>
 		if (is FunctionDeclaration decl) then
-			if (exists lytAnn = annotations(`DoLayoutAnnotation`,decl)) then
-				lytAnn
-			else if (exists lkndflAnn = annotations(`SetLookAndFeelAnnotation`,decl)) then
-				lkndflAnn
+			if (exists ann = annotations(`DoLayoutAnnotation`,decl)) then
+				ann
+			else
+				null
+		else
+			null;
+	
+	shared actual LookAndFeelAnnotation|CollectValueAnnotation|RemoveValueAnnotation?
+		setting(ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) =>
+		if (is ValueDeclaration decl) then
+			if (exists ann = annotations(`LookAndFeelAnnotation`,decl)) then
+				ann
+			else
+				null
+		else if (is FunctionDeclaration decl) then
+			if (exists ann = annotations(`CollectValueAnnotation`,decl)) then
+				ann
+			else if (exists ann = annotations(`RemoveValueAnnotation`,decl)) then
+				ann
 			else
 				null
 		else

@@ -1,5 +1,6 @@
 import it.feelburst.yayoi.model {
-	Named
+	Named,
+	ComponentMutableMap
 }
 import it.feelburst.yayoi.model.listener {
 	Listener
@@ -10,7 +11,11 @@ import it.feelburst.yayoi.model.visitor {
 "Component representing states and behaviours shared between
  component, container and window"
 shared sealed interface AbstractComponent
-	satisfies Named&Hierarchical {
+	satisfies
+		Named&
+		Hierarchical {
+	"Whether or not is valid or needs to be updated"
+	shared formal Boolean valid;
 	"X coordinate of this component"
 	shared formal Integer x;
 	"Y coordinate of this component"
@@ -31,14 +36,12 @@ shared sealed interface AbstractComponent
 	shared formal void display();
 	"Hide this component"
 	shared formal void hide();
-	"This component's listeners"
-	shared formal Listener<Object>[] listeners;
-	"Get this component's listener by name"
-	shared formal Listener<Object>? listener(String name);
-	"Add a listener to this component"
-	shared formal void addListener(Listener<Object> listener);
-	"Remove a listener from this component"
-	shared formal Listener<Object>? removeListener(String name);
+	"Component's listeners"
+	shared formal ComponentMutableMap<String,Listener<Object>> listeners;
+	"Invalidate this component"
+	shared formal void invalidate(Boolean internal = true);
+	"Validate this component (components layout and UIs)"
+	shared formal void validate(Boolean internal = true);
 	"Allow a visitor to visit this component"
 	shared formal void accept(Visitor visitor);
 }

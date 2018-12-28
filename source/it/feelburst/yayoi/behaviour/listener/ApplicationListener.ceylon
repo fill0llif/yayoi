@@ -1,21 +1,32 @@
 import it.feelburst.yayoi.behaviour.listener.model {
 	ShutdownRequested
 }
+import it.feelburst.yayoi.model.window {
+	Window
+}
 
+import org.springframework.beans.factory.annotation {
+	autowired
+}
+import org.springframework.context.annotation {
+	AnnotationConfigApplicationContext
+}
 import org.springframework.context.event {
 	eventListener
 }
 import org.springframework.stereotype {
 	component
 }
-import org.springframework.context.annotation {
-
-	AnnotationConfigApplicationContext
+import java.lang {
+	Types {
+		classForType
+	}
 }
-import org.springframework.beans.factory.annotation {
+import ceylon.interop.java {
 
-	autowired
+	CeylonCollection
 }
+
 component
 shared class ApplicationListener() {
 	
@@ -24,8 +35,11 @@ shared class ApplicationListener() {
 	
 	eventListener
 	shared void handleShutdownRequested(ShutdownRequested event) {
-		log.info("Application shutting down...");
-		context.close();
+		CeylonCollection(context
+			.getBeansOfType(classForType<Window<Object>>())
+			.values())
+		.each((Window<Object> wndw) =>
+			wndw.close());
 	}
 	
 }

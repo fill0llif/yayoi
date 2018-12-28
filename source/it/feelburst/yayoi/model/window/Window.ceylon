@@ -3,24 +3,30 @@ import it.feelburst.yayoi.model {
 	Reactor,
 	Value
 }
-import it.feelburst.yayoi.model.container {
-	AbstractContainer
-}
+
 import it.feelburst.yayoi.model.visitor {
 	Visitor
 }
+import it.feelburst.yayoi.model.collection {
+
+	AbstractCollection
+}
 
 "A window that can be rendered on screen and can contains
- many containers and components"
+ many containers, collections or components"
 shared interface Window<out Type>
-	satisfies AbstractContainer&Declaration&Value<Type>&Reactor
+	satisfies
+		AbstractCollection&
+		Declaration&
+		Value<Type>&
+		Reactor
 	given Type satisfies Object {
 	"This window's title"
 	shared formal String? title;
 	"Set title of this window"
 	shared formal void setTitle(String title);
 	"This window's state"
-	shared formal WindowState state;
+	shared formal WindowState<Object> state;
 	"Set exit app on close on this window"
 	shared formal void setExitOnClose();
 	"Whether this window is visible or it has been disposed of"

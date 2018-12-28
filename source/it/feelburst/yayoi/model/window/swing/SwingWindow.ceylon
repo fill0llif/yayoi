@@ -8,24 +8,21 @@ import it.feelburst.yayoi.behaviour.listener.model {
 	Packed,
 	Centered,
 	Closed,
-	LocationSet,
 	ExitOnCloseSet,
 	Iconified,
 	Maximized,
 	Restored,
-	TitleSet
+	TitleSet,
+	WindowInvalidated
 }
 import it.feelburst.yayoi.model {
 	Value
 }
-import it.feelburst.yayoi.model.awt {
-	AwtContainer
+import it.feelburst.yayoi.model.collection {
+	AbstractCollection
 }
-import it.feelburst.yayoi.model.container {
-	AbstractContainer
-}
-import it.feelburst.yayoi.model.container.swing {
-	AbstractSwingContainer
+import it.feelburst.yayoi.model.collection.swing {
+	AbstractSwingCollection
 }
 import it.feelburst.yayoi.model.window {
 	Window,
@@ -39,9 +36,6 @@ import it.feelburst.yayoi.model.window.swing {
 }
 
 import java.awt {
-	Toolkit {
-		defaultToolkit
-	},
 	Wndw=Window
 }
 
@@ -56,20 +50,31 @@ import javax.swing {
 	JDialog
 }
 "Swing implementation of a window"
-shared final class SwingWindow<Type>(
+shared final class SwingWindow<out Type>(
 	String name,
 	ClassDeclaration|FunctionDeclaration|ValueDeclaration|Null declaration,
 	Value<Type> vl,
+	void addValue(Object cltr, Object cltd),
+	void removeValue(Object cltr, Object cltd),
 	void publishEvent(Object event))
-	extends AbstractSwingContainer<Type>(name,declaration,vl,publishEvent)
+	extends AbstractSwingCollection<Type>(
+		name,
+		declaration,
+		vl,
+		addValue,
+		removeValue,
+		publishEvent)
 	satisfies Window<Type>
 	given Type satisfies Wndw {
 	
-	value awtContainer = AwtContainer(name,vl,publishEvent);
+	late variable WindowState<Integer> windowState = nrmal;
 	
-	late variable WindowState windowState = nrmal;
+	shared actual void invalidate(Boolean internal) {
+		super.invalidate(internal);
+		publishEvent(WindowInvalidated(this));
+	}
 	
-	shared actual WindowState state {
+	shared actual WindowState<Integer> state {
 		switch (vl = val)
 		case (is JFrame) {
 			assert (exists state = stateCodes[vl.extendedState]);
@@ -91,7 +96,7 @@ shared final class SwingWindow<Type>(
 		}
 	}
 	
-	shared actual AbstractContainer? root =>
+	shared actual AbstractCollection? root =>
 		this;
 	
 	shared actual String? title {
@@ -146,15 +151,8 @@ shared final class SwingWindow<Type>(
 		if (!visible) {
 			display();
 		}
-		value screenSize = defaultToolkit.screenSize;
-		value parentWidth = screenSize.width.integer;
-		value parentHeight = screenSize.height.integer;
-		value x = (parentWidth - width) / 2;
-		value y = (parentHeight - height) / 2;
 		invokeLater(() {
-			awtContainer.setLocation(x, y);
-			publishEvent(LocationSet(this,x,y));
-			log.debug("GUIEvent: Location set at (``x``,``y``) for SwingWindow '``this``'.");
+			val.setLocationRelativeTo(null);
 			publishEvent(Centered(this));
 			log.debug("GUIEvent: SwingWindow '``this``' centered.");
 		});
@@ -164,8 +162,6 @@ shared final class SwingWindow<Type>(
 		value vl = val;
 		invokeLater(() {
 			vl.pack();
-			vl.validate();
-			vl.repaint();
 			publishEvent(Packed(this));
 			log.debug("GUIEvent: SwingWindow '``this``' is now packed.");
 		});
@@ -224,9 +220,7 @@ shared final class SwingWindow<Type>(
 					display();
 				}
 				invokeLater(() {
-					vl.extendedState = icnified.correspondence();
-					vl.validate();
-					vl.repaint();
+					vl.extendedState = icnified.val;
 					publishEvent(Iconified(this));
 					log.debug("GUIEvent: SwingWindow '``this``' is now iconified.");
 				});
@@ -252,9 +246,7 @@ shared final class SwingWindow<Type>(
 					display();
 				}
 				invokeLater(() {
-					vl.extendedState = mximized.correspondence();
-					vl.validate();
-					vl.repaint();
+					vl.extendedState = mximized.val;
 					publishEvent(Maximized(this));
 					log.debug("GUIEvent: SwingWindow '``this``' is now maximized.");
 				});
@@ -280,9 +272,7 @@ shared final class SwingWindow<Type>(
 					display();
 				}
 				invokeLater(() {
-					vl.extendedState = nrmal.correspondence();
-					vl.validate();
-					vl.repaint();
+					vl.extendedState = nrmal.val;
 					publishEvent(Restored(this));
 					log.debug("GUIEvent: SwingWindow '``this``' is now restored.");
 				});
@@ -303,10 +293,24 @@ shared final class SwingWindow<Type>(
 	shared actual void close() {
 		switch (vl = val)
 		case (is JFrame) {
-			internalFrameClose(vl);
+			if (!closed) {
+				invokeLater(() {
+					vl.extendedState = clsed.val;
+					vl.dispose();
+					publishEvent(Closed(this));
+					log.debug("GUIEvent: SwingWindow '``this``' is now closed.");
+				});
+			}
 		}
 		case (is JDialog|JWindow) {
-			internalWindowAndDialogClose(vl);
+			if (!closed) {
+				windowState = clsed;
+				invokeLater(() {
+					vl.dispose();
+					publishEvent(Closed(this));
+					log.debug("GUIEvent: SwingWindow '``this``' is now closed.");
+				});
+			}
 		}
 		else {
 			value message =
@@ -315,28 +319,6 @@ shared final class SwingWindow<Type>(
 				"SwingWindow may be used only with JFrame, JDialog or JWindow.";
 			log.error(message);
 			throw Exception(message);
-		}
-	}
-	
-	void internalFrameClose(JFrame val) {
-		if (!closed) {
-			invokeLater(() {
-				val.extendedState = clsed.correspondence();
-				val.dispose();
-				publishEvent(Closed(this));
-				log.debug("GUIEvent: SwingWindow '``this``' is now closed.");
-			});
-		}
-	}
-	
-	void internalWindowAndDialogClose(JDialog|JWindow val) {
-		if (!closed) {
-			windowState = clsed;
-			invokeLater(() {
-				val.dispose();
-				publishEvent(Closed(this));
-				log.debug("GUIEvent: SwingWindow '``this``' is now closed.");
-			});
 		}
 	}
 	
@@ -349,7 +331,13 @@ shared final class SwingWindow<Type>(
 				log.info("GUIEvent: ExitOnClose operation set for SwingWindow '``this``'.");
 			});
 		}
-		case (is JDialog) {}
+		case (is JDialog) {
+			invokeLater(() {
+				vl.defaultCloseOperation = exitOnClose;
+				publishEvent(ExitOnCloseSet(this));
+				log.info("GUIEvent: ExitOnClose operation set for SwingWindow '``this``'.");
+			});
+		}
 		case (is JWindow) {}
 		else {
 			value message =

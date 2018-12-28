@@ -10,11 +10,11 @@ import it.feelburst.yayoi.marker {
 import it.feelburst.yayoi.model {
 	Declaration
 }
+import it.feelburst.yayoi.model.collection {
+	AbstractCollection
+}
 import it.feelburst.yayoi.model.component {
 	AbstractComponent
-}
-import it.feelburst.yayoi.model.container {
-	AbstractContainer
 }
 
 import java.lang {
@@ -35,11 +35,10 @@ shared class ParentReaction(
 	
 	shared actual void execute() {
 		value nmRslvr = context.getBean(classForType<NameResolver>());
-		value containingPckg = nmRslvr.resolveRoot(cmp.decl,ann);
-		value cntrName = "``containingPckg``.``ann.name``";
-		value cntr = context.getBean(cntrName,classForType<AbstractContainer>());
-		value addComponent = ann.agentMdl(cntr);
-		addComponent(cmp);
+		value cntrName = nmRslvr.resolveNamed(cmp.decl,ann);
+		value cntr = context.getBean(cntrName,classForType<AbstractCollection>());
+		value setParent = ann.agent(cmp).set;
+		setParent(cntr);
 		log.debug("Reaction: Parent Container '``cntr``' set requested for Component '``cmp``'.");
 	}
 }

@@ -1,15 +1,15 @@
-import it.feelburst.yayoi.model.container {
+import it.feelburst.yayoi.model.collection {
 
-	AbstractContainer
+	AbstractCollection
 }
 "A component of a tree"
 shared sealed interface Hierarchical {
 	"Component parent"
-	shared formal variable AbstractContainer? parent;
+	shared formal variable AbstractCollection? parent;
 	"Component root"
-	shared default AbstractContainer? root {
+	shared default AbstractCollection? root {
 		variable value prnet = parent;
-		while(is AbstractContainer prnt = prnet) {
+		while(is AbstractCollection prnt = prnet) {
 			prnet = prnt.parent;
 		}
 		return prnet;

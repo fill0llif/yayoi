@@ -18,7 +18,7 @@ import java.util {
 	EventListener
 }
 "Awt implementation of a listener"
-shared final class AwtListener<Type>(
+shared final class AwtListener<out Type>(
 	String name,
 	ClassDeclaration|FunctionDeclaration|ValueDeclaration|Null declaration,
 	Value<Type> vl,

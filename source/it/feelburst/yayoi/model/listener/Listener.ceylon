@@ -5,5 +5,9 @@ import it.feelburst.yayoi.model {
 }
 "A listener that listens to a component event"
 shared interface Listener<out Type>
-	satisfies Named&Declaration&Value<Type>
-	given Type satisfies Object {}
+	satisfies
+		Named&
+		Declaration&
+		Value<Type>
+	given Type satisfies Object {
+}

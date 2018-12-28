@@ -1,3 +1,6 @@
+import ceylon.interop.java {
+	CeylonCollection
+}
 import ceylon.language.meta {
 	annotations,
 	classDeclaration
@@ -18,13 +21,6 @@ import it.feelburst.yayoi.behaviour.action {
 import it.feelburst.yayoi.behaviour.component {
 	ComponentRegistry
 }
-import it.feelburst.yayoi.behaviour.component.impl {
-	ActionContext,
-	ReactorContext
-}
-import it.feelburst.yayoi.behaviour.listener.model {
-	ShutdownRequested
-}
 import it.feelburst.yayoi.behaviour.reaction {
 	Reaction,
 	Dependent
@@ -39,6 +35,9 @@ import it.feelburst.yayoi.model {
 import it.feelburst.yayoi.model.component {
 	Component
 }
+import it.feelburst.yayoi.model.collection {
+	Collection
+}
 import it.feelburst.yayoi.model.container {
 	Container,
 	Layout
@@ -52,9 +51,6 @@ import it.feelburst.yayoi.model.window {
 
 import java.lang {
 	Runnable,
-	Thread {
-		currentThread
-	},
 	Types {
 		classForType,
 		classForDeclaration
@@ -64,17 +60,8 @@ import java.util.concurrent {
 	ExecutorService
 }
 
-import javax.swing {
-	SwingUtilities {
-		invokeAndWait
-	}
-}
-
 import org.springframework.beans.factory.support {
 	GenericBeanDefinition
-}
-import org.springframework.context {
-	ApplicationEventPublisher
 }
 import org.springframework.context.annotation {
 	AnnotationConfigApplicationContext
@@ -85,6 +72,7 @@ import org.springframework.context.annotation {
 see(
 	`interface Component`,
 	`interface Container`,
+	`interface Collection`,
 	`interface Window`,
 	`interface Listener`,
 	`interface Layout`)
@@ -103,84 +91,98 @@ shared final class Yayoi(
 	satisfies Runnable {
 	
 	assert (exists appAnn = annotations(`YayoiAnnotation`, appType));
-	value basePackages = appAnn.basePackages;
 	value frameworkImpl = appAnn.frameworkImpl;
+	
+	{Package+} packages(Framework frmwrk) =>
+		frmwrk.packages.chain(appAnn.basePackages);
 	
 	shared actual void run() {
 		addLogWriter(writeLog);
 		configLogger();
 		log.info("Application startup...");
-		value context = AnnotationConfigApplicationContext();
-		registerFrameworkImpl(context);
-		log.info("Framework implementation '``frameworkImpl``' found.");
-		context.register(classForType<Conf>());
-		context.refresh();
-		log.info("Registering components...");
-		basePackages.each((Package pckg) =>
-			log.info("Base package '``pckg``' found."));
-		registerComponents(context);
-		log.info("Executing reactions...");
-		executeReactions(context);
-		log.info("Executing actions...");
-		executeActions(context);
-		log.info("Registering app...");
-		value invokeApp = registerApp(context);
-		log.info("Running app...");
-		invokeApp();
-		log.info("Waiting for window to close...");
-		waitForWindowsToClose();
-		value eventPublisher = context
-			.getBean(classForType<ApplicationEventPublisher>());
-		eventPublisher.publishEvent(ShutdownRequested());
+		try (context = AnnotationConfigApplicationContext()) {
+			value frmwrkImpl = registerFrameworkImpl(context);
+			log.info("Framework implementation '``frameworkImpl``' found.");
+			context.register(classForType<Conf>());
+			context.refresh();
+			log.info("Registering components...");
+			packages(frmwrkImpl)
+			.each((Package pckg) =>
+				log.info("Base package '``pckg``' found."));
+			registerComponents(context,frmwrkImpl);
+			frmwrkImpl.setLookAndFeel(context);
+			log.info("Executing reactions...");
+			executeReactions(context);
+			log.info("Executing actions...");
+			executeActions(context);
+			log.info("Registering app...");
+			value invokeApp = registerApp(context);
+			log.info("Running app...");
+			invokeApp();
+			log.info("Waiting for window to close...");
+			frmwrkImpl.waitForWindowsToClose();
+			log.info("Application shutting down...");
+		}
 	}
 	
-	void registerFrameworkImpl(AnnotationConfigApplicationContext context) {
-		assert (is Framework frameworkImpl = this.frameworkImpl.get());
-		context.beanFactory
-			.registerSingleton("frameworkImpl", frameworkImpl);
+	Framework registerFrameworkImpl(AnnotationConfigApplicationContext context) {
+		value frameworkImpl = this.frameworkImpl.get();
+		if (is Framework frameworkImpl) {
+			context.beanFactory
+				.registerSingleton("frameworkImpl", frameworkImpl);
+			return frameworkImpl;
+		}
+		else {
+			value message =
+				"Cannot startup application. '``frameworkImpl else "null"``' is not a framework.";
+			log.error(message);
+			throw Exception(message);
+		}
 	}
 	
-	void registerComponents(AnnotationConfigApplicationContext context) =>
+	void registerComponents(
+		AnnotationConfigApplicationContext context,
+		Framework frmwrk) =>
 		context
 		.getBean(classForType<ComponentRegistry>())
-		.registerByPackages(*basePackages);
+		.registerByPackages(*packages(frmwrk));
 	
 	void executeReactions(AnnotationConfigApplicationContext context) {
 		value executorService = context
 			.getBean(classForType<ExecutorService>());
-		context
-		.getBean("reactorContext",classForType<ReactorContext>())
-		.values()
-		.each((String name) =>
-			let (reactor = context.getBean(name,classForType<Reactor>()))
-			reactor
-			.reactions<>()
-			.each((Reaction<> reaction) {
-				try {
-					if (is Dependent reaction) {
-						executorService.submit(() {
-							reaction.awaitIndependent();
-							reaction.execute();
-						});
-					}
-					else {
+		CeylonCollection(context
+			.getBeansOfType(classForType<Reactor>())
+			.values())
+		.flatMap((Reactor reactor) =>
+			reactor.reactions<>())
+		.sort((Reaction<> x, Reaction<> y) =>
+			x <=> y)
+		.each((Reaction<> reaction) {
+			try {
+				if (is Dependent reaction) {
+					executorService.submit(() {
+						reaction.awaitIndependent();
 						reaction.execute();
-					}
+					});
 				}
-				catch (Exception e) {
-					log.error(
-						"Reaction '``classDeclaration(reaction).name``' on component " +
-						"'``reaction.cmp``' failed executing due to the following error: " +
-						"``e.message``");
+				else {
+					reaction.execute();
 				}
-			}));
+			}
+			catch (Exception e) {
+				log.error(
+					"Reaction '``classDeclaration(reaction).name``' on component " +
+					"'``reaction.cmp``' failed executing due to the following error: " +
+					"``e.message``");
+			}
+		});
 	}
 	
 	void executeActions(AnnotationConfigApplicationContext context) =>
-		context.getBean("actionContext",classForType<ActionContext>())
-		.values()
-		.each((String name) {
-			value action = context.getBean(name,classForType<Action>());
+		CeylonCollection(context
+			.getBeansOfType(classForType<Action>())
+			.values())
+		.each((Action action) {
 			try {
 				action.execute();
 			}
@@ -200,23 +202,20 @@ shared final class Yayoi(
 			autowireCandidate = true;
 			scope = "singleton";
 		});
-		assert (is Runnable appInstance =
-			context.getBean(classForDeclaration(appType)));
-		value executorService = context
-			.getBean(classForType<ExecutorService>());
-		return () =>
-			executorService.execute(appInstance);
-	}
-	
-	void waitForWindowsToClose() =>
-		awtThread.join();
-	
-	Thread awtThread {
-		variable Thread? awtThread = null;
-		invokeAndWait(() =>
-			awtThread = currentThread());
-		assert (exists thread = awtThread);
-		return thread;
+		value appInstance =
+			context.getBean(classForDeclaration(appType));
+		if (is Runnable appInstance) {
+			value executorService = context
+				.getBean(classForType<ExecutorService>());
+			return () =>
+				executorService.execute(appInstance);
+		}
+		else {
+			value message =
+				"Cannot startup application. '``appInstance``' is not a runnable application.";
+			log.error(message);
+			throw Exception(message);
+		}
 	}
 	
 }

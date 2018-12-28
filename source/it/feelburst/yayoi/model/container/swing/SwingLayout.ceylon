@@ -14,7 +14,7 @@ import it.feelburst.yayoi.model.impl {
 	AbstractNamedValue
 }
 "Swing implementation of a layout"
-shared final class SwingLayout<Type>(
+shared final class SwingLayout<out Type>(
 	String name,
 	ClassDeclaration|FunctionDeclaration|ValueDeclaration|Null declaration,
 	Value<Type> vl,

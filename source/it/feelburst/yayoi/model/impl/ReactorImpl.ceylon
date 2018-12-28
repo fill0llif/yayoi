@@ -11,9 +11,9 @@ shared sealed class ReactorImpl() satisfies Reactor {
 	shared actual Reaction<Type>[] reactions<Type=Object>()
 		given Type satisfies Object =>
 		rctns
-			.narrow<Reaction<Type>>()
-			.sort((Reaction<Type> x, Reaction<Type> y) =>
-			x.order <=> y.order);
+		.narrow<Reaction<Type>>()
+		.sort((Reaction<Type> x, Reaction<Type> y) =>
+			x <=> y);
 	
 	shared actual void addReaction(Reaction<> reaction) =>
 		rctns = rctns.append([reaction]);

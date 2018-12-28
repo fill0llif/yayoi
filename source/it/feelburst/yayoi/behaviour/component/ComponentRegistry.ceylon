@@ -4,7 +4,7 @@ import ceylon.language.meta.declaration {
 	ValueDeclaration,
 	ClassDeclaration
 }
-"Component and action register"
+"Component, action, setting register"
 shared sealed interface ComponentRegistry {
 	shared formal AnnotationReader annotationChecker;
 	shared formal NameResolver nameResolver;
@@ -19,12 +19,12 @@ shared sealed interface ComponentRegistry {
 			.members<ClassDeclaration|FunctionDeclaration|ValueDeclaration>()
 			.filter((ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) =>
 				annotationChecker.component(decl) exists ||
-				annotationChecker.action(decl) exists)
+				annotationChecker.action(decl) exists ||
+				annotationChecker.setting(decl) exists)
 			.each((ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) =>
 				register(decl)));
-	"Get internal component function with autowired component parameters"
+	"Get internal component or action function with autowired component parameters"
 	shared formal <Type|Exception>() autowired<Type=Anything>(
 		String name,
 		FunctionDeclaration decl);
-	
 }

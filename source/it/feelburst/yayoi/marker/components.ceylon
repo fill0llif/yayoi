@@ -8,6 +8,9 @@ import ceylon.language.meta.declaration {
 import it.feelburst.yayoi.model.component {
 	Component
 }
+import it.feelburst.yayoi.model.collection {
+	Collection
+}
 import it.feelburst.yayoi.model.container {
 	Container,
 	Layout
@@ -32,6 +35,14 @@ shared final sealed annotation class ContainerAnnotation()
 		ClassDeclaration|FunctionDeclaration|ValueDeclaration>&Marker {
 	shared actual InterfaceDeclaration marked =>
 		`interface Container`;
+}
+
+shared final sealed annotation class CollectionAnnotation()
+	satisfies OptionalAnnotation<
+		CollectionAnnotation,
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration>&Marker {
+	shared actual InterfaceDeclaration marked =>
+		`interface Collection`;
 }
 
 shared final sealed annotation class WindowAnnotation()
@@ -63,6 +74,9 @@ shared annotation ComponentAnnotation component() =>
 
 shared annotation ContainerAnnotation container() =>
 	ContainerAnnotation();
+
+shared annotation CollectionAnnotation collection() =>
+	CollectionAnnotation();
 
 shared annotation WindowAnnotation window() =>
 	WindowAnnotation();

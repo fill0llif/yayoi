@@ -2,15 +2,12 @@ import ceylon.language.meta.declaration {
 	Package,
 	ClassDeclaration,
 	InterfaceDeclaration,
-	ValueDeclaration
-}
-import ceylon.language.meta.model {
-	Method
+	ValueDeclaration,
+	FunctionDeclaration
 }
 
-shared interface ModelReaction<in Container=Nothing,out Type=Anything,in Arguments=Nothing>
-	given Arguments satisfies Anything[] {
-	shared formal Method<Container,Type,Arguments> agentMdl;
+import it.feelburst.yayoi.model {
+	Named
 }
 
 shared interface Order {
@@ -38,14 +35,23 @@ shared interface Marker {
 shared final sealed annotation class YayoiAnnotation(
 	shared {Package+} basePackages,
 	shared ValueDeclaration frameworkImpl)
-	satisfies OptionalAnnotation<YayoiAnnotation,ClassDeclaration> {}
+	satisfies
+		OptionalAnnotation<YayoiAnnotation,ClassDeclaration> {}
 
 shared final sealed annotation class NamedAnnotation(
-	shared String name,
+	shared actual String name,
 	shared actual String pckg)
 	satisfies
 		OptionalAnnotation<NamedAnnotation,ValueDeclaration>&
+		Named&
 		PackageDependent {}
+
+shared final sealed annotation class OrderingAnnotation(
+	shared {NamedAnnotation*} named)
+	satisfies
+		OptionalAnnotation<
+			OrderingAnnotation,
+			ClassDeclaration|FunctionDeclaration|ValueDeclaration> {}
 
 shared annotation YayoiAnnotation yayoi(
 	{Package+} basePackages,
@@ -56,3 +62,7 @@ shared annotation NamedAnnotation named(
 	String name,
 	String pckg = "") =>
 	NamedAnnotation(name,pckg);
+
+shared annotation OrderingAnnotation ordering(
+	{NamedAnnotation*} named) =>
+	OrderingAnnotation(named);

@@ -2,6 +2,37 @@
 
 # Change Log
 
+## 3.1.1 (2018-12-28)
+
+**Added:**
+- [#25 - Let the user define specific Settings](https://github.com/fill0llif/yayoi/issues/25);
+- [#26 - Let the user define Collections](https://github.com/fill0llif/yayoi/issues/26);
+- [#29 - Let the user define CollectValue and RemoveValue Settings to let a Component decides how the internal collector should collect/remove the internal value](https://github.com/fill0llif/yayoi/issues/29);
+- [#30 - Let Collections be mutable maps and let Components access listeners using mutable maps may be useful](https://github.com/fill0llif/yayoi/issues/30);
+- [#31 - Introduce Window validation lifecycle](https://github.com/fill0llif/yayoi/issues/31);
+- [#35 - Let the user order components of abstract collections with `ordering` annotation on abstract collection](https://github.com/fill0llif/yayoi/issues/35);
+
+**Changed:**
+- [#23 - Value `do` method is useless](https://github.com/fill0llif/yayoi/issues/23);
+- [#24 - Look and Feel may be more useful as a Setting](https://github.com/fill0llif/yayoi/issues/24);
+- [#27 - Abstract adding Listeners to Components discarding specific Listener Reaction and introducing generic Listenable Reaction](https://github.com/fill0llif/yayoi/issues/27);
+- [#28 - Window's collection of Components improvement](https://github.com/fill0llif/yayoi/issues/28);
+- [#33 - WindowState improvement](https://github.com/fill0llif/yayoi/issues/33);
+- [#34 - Change Swing implementation of centering a Window](https://github.com/fill0llif/yayoi/issues/34);
+
+**Closed bugs/regressions:**
+- [#7 - Components design flaw](https://github.com/fill0llif/yayoi/issues/7);
+- [#20 - SwingLayoutAction failed to execute due to LateValue not being thread-safe](https://github.com/fill0llif/yayoi/issues/20);
+- [#21 - SwingLayoutAction not running on AWT thread causes GroupLayout to raise an IllegalStateException](https://github.com/fill0llif/yayoi/issues/21);
+- [#22 - Child component annotated with `parent` annotation cannot be resolved if package is different from the containing one](https://github.com/fill0llif/yayoi/issues/22);
+- [#32 - Swing components implementations aren't covariant in its internal type](https://github.com/fill0llif/yayoi/issues/32);
+
+**Regression:**
+- [#7 - Components design flaw](https://github.com/fill0llif/yayoi/issues/7);
+
+**Open:**
+- [#19 - LateValue should use late annotation to retain the late value](https://github.com/fill0llif/yayoi/issues/19);
+
 ## 2.1.1 (2018-12-08)
 
 **Added:**

@@ -29,11 +29,19 @@ shared sealed class SwingMutableWithLayout<out Type,LayoutType>(
 	
 	late variable Layout<LayoutType>? lyt =
 		SwingLayout<LayoutType>(
-			"``name``.SwingLayout()",
+			"``name``.swingLayout",
 			null,
 			LateValue<LayoutType>(() {
-				assert (is LayoutType layt = vl.val.layout);
-				return layt;
+				if (is LayoutType layt = vl.val.layout) {
+					return layt;
+				}
+				else {
+					value message =
+						"SwingLayout '``vl.val.layout``' cannot be added to SwingContainer " +
+						"'``name``'. Expected type '`` `interface LayoutManager`.name ``'.";
+					log.error(message);
+					throw Exception(message);
+				}
 			}),
 			publishEvent);
 	
@@ -42,18 +50,28 @@ shared sealed class SwingMutableWithLayout<out Type,LayoutType>(
 	
 	shared actual void setLayout(Layout<LayoutType>? layout) {
 		if (exists layout) {
-			lyt = layout;
-			assert (is LayoutManager layt = layout.val);
-			invokeLater(() {
-				vl.val.layout = layt;
-			});
-			log.debug("LayoutManager '``layt``' added to SwingContainer '``vl.val``'.");
+			if (is LayoutManager layt = layout.val) {
+				value val = vl.val;
+				invokeLater(() {
+					val.layout = layt;
+				});
+				lyt = layout;
+				log.debug("LayoutManager '``layt``' added to SwingContainer '``vl.val``'.");
+			}
+			else {
+				value message =
+					"SwingLayout '``layout.val``' cannot be added to SwingContainer " +
+					"'``name``'. Expected type '`` `interface LayoutManager`.name ``'.";
+				log.error(message);
+				throw Exception(message);
+			}
 		}
 		else {
-			lyt = null;
+			value val = vl.val;
 			invokeLater(() {
-				vl.val.layout = null;
+				val.layout = null;
 			});
+			lyt = null;
 			log.debug("Null LayoutManager added to SwingContainer '``vl.val``'.");
 		}
 	}

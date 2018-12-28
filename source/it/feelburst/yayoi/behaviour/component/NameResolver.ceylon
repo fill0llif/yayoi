@@ -5,10 +5,12 @@ import ceylon.language.meta.declaration {
 }
 
 import it.feelburst.yayoi.marker {
-	PackageDependent,
-	NamedAnnotation
+	PackageDependent
 }
-"Component and action name resolver"
+import it.feelburst.yayoi.model {
+	Named
+}
+"Component, action, setting name resolver"
 shared sealed interface NameResolver {
 	"Resolve a component or an action name"
 	shared formal String|Exception resolve(
@@ -22,6 +24,6 @@ shared sealed interface NameResolver {
 		PackageDependent? pckgDpndnt = null);
 	"Resolve a named component"
 	shared formal String resolveNamed(
-		FunctionDeclaration decl,
-		NamedAnnotation named);
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl,
+		Named&PackageDependent named);
 }

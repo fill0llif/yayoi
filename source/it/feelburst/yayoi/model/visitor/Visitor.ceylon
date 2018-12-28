@@ -4,6 +4,9 @@ import it.feelburst.yayoi.model.component {
 import it.feelburst.yayoi.model.container {
 	Container
 }
+import it.feelburst.yayoi.model.collection {
+	Collection
+}
 import it.feelburst.yayoi.model.window {
 	Window
 }
@@ -12,6 +15,8 @@ shared interface Visitor {
 		Component<Type> visited);
 	shared formal void visitContainer<Type,LayoutType>(
 		Container<Type,LayoutType> visited);
+	shared formal void visitCollection<Type>(
+		Collection<Type> visited);
 	shared formal void visitWindow<Type>(
 		Window<Type> visited);
 }

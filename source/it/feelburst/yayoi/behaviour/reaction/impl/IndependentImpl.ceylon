@@ -7,7 +7,7 @@ import it.feelburst.yayoi.model.concurrent {
 import java.util.concurrent.locks {
 	Condition
 }
-shared class IndependentImpl()
+shared final class IndependentImpl()
 		satisfies Independent {
 	shared actual Lock lock = Lock();
 	shared actual Condition doneExecuting = lock.newCondition();

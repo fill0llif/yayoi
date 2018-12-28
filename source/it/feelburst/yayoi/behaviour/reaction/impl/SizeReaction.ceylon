@@ -34,7 +34,7 @@ shared class SizeReaction(
 	shared actual void signalDependent() =>
 		depender.signalDependent();
 	shared actual void execute() {
-		value setSize = ann.agentMdl(cmp);
+		value setSize = ann.agent(cmp);
 		setSize(ann.width, ann.height);
 		log.debug("Reaction: Size (``ann.width``,``ann.height``) set requested for Component '``cmp``'.");
 	}

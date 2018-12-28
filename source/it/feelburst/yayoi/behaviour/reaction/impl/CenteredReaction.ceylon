@@ -23,7 +23,7 @@ shared class CenteredReaction(
 		dependentImpl.awaitIndependent();
 	
 	shared actual void execute() {
-		value center = ann.agentMdl(cmp);
+		value center = ann.agent(cmp);
 		center();
 		log.debug("Reaction: Component '``cmp``' centered requested.");
 	}

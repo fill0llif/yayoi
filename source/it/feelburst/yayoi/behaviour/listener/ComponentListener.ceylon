@@ -1,41 +1,49 @@
-import ceylon.interop.java {
-	CeylonMap
-}
-
-import it.feelburst.yayoi.behaviour.action {
-	LayoutAction
-}
-import it.feelburst.yayoi.behaviour.component {
-	NameResolver
-}
 import it.feelburst.yayoi.behaviour.listener.model {
 	IndependentDoneExecuting,
-	ComponentAdded,
-	SizeSet
+	SizeSet,
+	Centered,
+	LocationSet,
+	ComponentCollected,
+	ComponentRemoved,
+	WindowSetup,
+	WindowInvalidated,
+	Closed,
+	Packed,
+	Iconified,
+	Maximized,
+	Restored
 }
 import it.feelburst.yayoi.behaviour.reaction {
 	Reaction,
 	Independent
 }
 import it.feelburst.yayoi.behaviour.reaction.impl {
-	ParentReaction,
 	SizeReaction
 }
 import it.feelburst.yayoi.model {
-	Reactor,
-	Declaration
+	Reactor
 }
 import it.feelburst.yayoi.model.component {
 	AbstractComponent
 }
+import it.feelburst.yayoi.model.impl {
+	ValidationLifecycle
+}
 
 import java.lang {
-	JString=String,
-	Types
+	Types {
+		classForType
+	}
+}
+import java.util.concurrent {
+	ExecutorService
 }
 
 import org.springframework.beans.factory.annotation {
 	autowired
+}
+import org.springframework.beans.factory.config {
+	ConfigurableListableBeanFactory
 }
 import org.springframework.context {
 	ApplicationEventPublisher
@@ -56,7 +64,13 @@ shared class ComponentListener() {
 	late AnnotationConfigApplicationContext context;
 	
 	autowired
+	late ConfigurableListableBeanFactory beanFactory;
+	
+	autowired
 	late ApplicationEventPublisher eventPublisher;
+	
+	autowired
+	late ExecutorService executor;
 	
 	eventListener
 	shared void handleSizeSet(SizeSet event) {
@@ -64,6 +78,12 @@ shared class ComponentListener() {
 			event.source,
 			(Reaction<Object> rctn) =>
 				rctn is SizeReaction));
+	}
+	
+	eventListener
+	shared void handleCentered(Centered event) {
+		value source = event.source;
+		eventPublisher.publishEvent(LocationSet(source,source.x,source.y));
 	}
 	
 	"Signal dependent (independent already been executed)"
@@ -77,30 +97,59 @@ shared class ComponentListener() {
 		independentRctn.signalDependent();
 	}
 	
-	"Decide whether or not to add a component to a container"
 	eventListener
-	shared void handleComponentAdded(ComponentAdded event) {
-		//if there are no layout actions, container's layout has not been addressed,
-		//therefore components must be added to the container at framework impl level
-		//if component has a parent
-		if (is Reactor&Declaration cmp = event.component,
-			exists prntRctn = cmp.reactions<>()
-			.narrow<ParentReaction>()
-			.find((ParentReaction reaction) =>
-				reaction.cmp == event.component)) {
-			//get container
-			value nmRslvr = context.getBean(Types.classForType<NameResolver>());
-			value containingPckg = nmRslvr.resolveRoot(cmp.decl,prntRctn.ann);
-			value cntrName = "``containingPckg``.``prntRctn.ann.name``";
-			value lytActns = CeylonMap(context.getBeansOfType(Types.classForType<LayoutAction>()));
-			//if exists a layout action for the container
-			if (!lytActns
-				.find((JString lytNm -> LayoutAction lytAct) =>
-					let (name = "``containingPckg``.``lytAct.ann.container``")
-					name == cntrName) exists) {
-				//add component at framework implementation level
-				event.addComponent();
-			}
-		}
+	shared void handleComponentCollected(ComponentCollected event) {
+		event.collected.invalidate();
 	}
+	
+	eventListener
+	shared void handleComponentRemoved(ComponentRemoved event) {
+		event.collected.invalidate();
+	}
+	
+	eventListener
+	shared void handlePacked(Packed event) {
+		event.source.invalidate();
+	}
+	
+	eventListener
+	shared void handleIconified(Iconified event) {
+		event.source.invalidate();
+	}
+	
+	eventListener
+	shared void handleMaximized(Maximized event) {
+		event.source.invalidate();
+	}
+	
+	eventListener
+	shared void handleRestored(Restored event) {
+		event.source.invalidate();
+	}
+	
+	eventListener
+	shared void handleWindowConstructed(WindowSetup event) {
+		value wndwVldtLfcycl = ValidationLifecycle(
+			event.window,
+			executor.execute);
+		beanFactory.registerSingleton(event.window.name + ".lifecycle", wndwVldtLfcycl);
+		wndwVldtLfcycl.start();
+	}
+	
+	eventListener
+	shared void handleWindowInvalidated(WindowInvalidated event) {
+		value wndwVldtLfcycl = context.getBean(
+			event.window.name + ".lifecycle",
+			classForType<ValidationLifecycle>());
+		wndwVldtLfcycl.invalidate();
+	}
+	
+	eventListener
+	shared void handleClosed(Closed event) {
+		value wndwVldtLfcycl = context.getBean(
+			event.source.name + ".lifecycle",
+			classForType<ValidationLifecycle>());
+		wndwVldtLfcycl.stop();
+	}
+	
 }

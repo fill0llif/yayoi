@@ -10,11 +10,15 @@ import it.feelburst.yayoi.model.container {
 import it.feelburst.yayoi.model.window {
 	Window
 }
-"A reactor is a component (component, container or window only)
+import it.feelburst.yayoi.model.collection {
+	Collection
+}
+"A reactor is a component (component, container, collection, window)
  with reactions"
 see(
 	`interface Component`,
 	`interface Container`,
+	`interface Collection`,
 	`interface Window`,
 	`interface Reaction`)
 shared sealed interface Reactor {

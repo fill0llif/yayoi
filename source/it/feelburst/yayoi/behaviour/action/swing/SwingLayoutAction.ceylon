@@ -19,6 +19,15 @@ import java.lang {
 		classForType
 	}
 }
+import java.util.concurrent {
+	FutureTask
+}
+
+import javax.swing {
+	SwingUtilities {
+		invokeLater
+	}
+}
 
 import org.springframework.context {
 	ApplicationContext
@@ -33,15 +42,18 @@ shared final class SwingLayoutAction(
 	shared actual void execute() {
 		value nmRslvr = context.getBean(classForType<NameResolver>());
 		value cmpRgstr = context.getBean(classForType<ComponentRegistry>());
-		value containingPckg = nmRslvr.resolveRoot(decl,ann);
-		value name = "``containingPckg``.``ann.container``";
+		value cntName = nmRslvr.resolveNamed(decl,ann);
 		value cnt = context.getBean(
-			name,
+			cntName,
 			classForType<Container<Object,Object>>());
 		if (exists lyt = cnt.layout) {
-			value cntrCmps = cnt.components.sequence();
-			value atwrdIntrnlAct = cmpRgstr.autowired<>(this.name,decl);
-			if (is Exception actRslt = atwrdIntrnlAct()) {
+			value cntrCmps = cnt.items.sequence();
+			value atwrdIntrnlActFtr =
+			let (atwrdIntrnlAct = cmpRgstr.autowired<>(this.name,decl))
+			FutureTask<Anything>(() =>
+				atwrdIntrnlAct());
+			invokeLater(atwrdIntrnlActFtr);
+			if (is Exception actRslt = atwrdIntrnlActFtr.get()) {
 				throw actRslt;
 			}
 			else {

@@ -5,13 +5,11 @@ import ceylon.language.meta.declaration {
 	ClassDeclaration,
 	FunctionDeclaration,
 	ValueDeclaration,
-	InterfaceDeclaration,
 	NestableDeclaration,
 	FunctionOrValueDeclaration
 }
 
 import it.feelburst.yayoi.behaviour.action {
-	LookAndFeelAction,
 	LayoutAction
 }
 import it.feelburst.yayoi.behaviour.component {
@@ -21,13 +19,13 @@ import it.feelburst.yayoi.behaviour.component {
 }
 import it.feelburst.yayoi.behaviour.reaction.impl {
 	CenteredReaction,
-	OnActionPerformedReaction,
 	ExitOnCloseReaction,
 	ParentReaction,
 	SizeReaction,
 	LocationReaction,
 	WithLayoutReaction,
-	WindowEventReaction
+	CollectReaction,
+	ListenableReaction
 }
 import it.feelburst.yayoi.marker {
 	ContainerAnnotation,
@@ -41,17 +39,22 @@ import it.feelburst.yayoi.marker {
 	ExitOnCloseAnnotation,
 	SizeAnnotation,
 	LayoutAnnotation,
-	OnActionPerformedAnnotation,
 	WithLayoutAnnotation,
-	WindowEventAnnotation,
-	lowestPrecedenceOrder,
-	SetLookAndFeelAnnotation,
+	LookAndFeelAnnotation,
 	Marker,
-	NamedAnnotation
+	NamedAnnotation,
+	CollectionAnnotation,
+	CollectAnnotation,
+	ListenableAnnotation,
+	CollectValueAnnotation,
+	RemoveValueAnnotation,
+	lowestPrecedenceOrder
 }
 import it.feelburst.yayoi.model {
-	Framework,
-	Constructor
+	Framework
+}
+import it.feelburst.yayoi.model.collection {
+	Collection
 }
 import it.feelburst.yayoi.model.component {
 	Component
@@ -62,6 +65,11 @@ import it.feelburst.yayoi.model.container {
 }
 import it.feelburst.yayoi.model.listener {
 	Listener
+}
+import it.feelburst.yayoi.model.setting {
+	CollectValueSetting,
+	RemoveValueSetting,
+	LookAndFeelSetting
 }
 import it.feelburst.yayoi.model.window {
 	Window
@@ -101,12 +109,6 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 	autowired
 	late ConfigurableListableBeanFactory beanFactory;
 	
-	autowired
-	late ReactorContext reactorContext;
-	
-	autowired
-	late ActionContext actionContext;
-	
 	shared actual void register(
 		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) {
 		log.info("Resolving name for '``decl``'...");
@@ -118,24 +120,28 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 				value cmp = doRegister<
 					Component<Object>|
 					Container<Object,Object>|
+					Collection<Object>|
 					Window<Object>|
 					Layout<Object>|
 					Listener<Object>,
 					ClassDeclaration|FunctionDeclaration|ValueDeclaration,
 					ComponentAnnotation|
 					ContainerAnnotation|
+					CollectionAnnotation|
 					WindowAnnotation|
 					LayoutAnnotation|
 					ListenerAnnotation,
 					AnnotationConfigApplicationContext>(
-					name,decl,ann,frameworkImpl.componentConstructor,context);
+					name,
+					decl,
+					ann,
+					context);
 				log.info("Component '``cmp``' registered.");
 				// if reactor (e.g. have reactions)
 				if (is Component<Object>|
 					Container<Object,Object>|
+					Collection<Object>|
 					Window<Object> cmp) {
-					reactorContext.register(cmp.name);
-					log.info("Reactor '``cmp``' registered.");
 					registerReactions(cmp);
 				}
 			}
@@ -145,16 +151,42 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 				exists ann = annotationChecker.action(decl)) {
 				log.info("Registering Action '``decl``'...");
 				value act = doRegister<
-					LayoutAction|LookAndFeelAction,
+					LayoutAction,
 					FunctionDeclaration,
-					DoLayoutAnnotation|SetLookAndFeelAnnotation>(
-					name,decl,ann,frameworkImpl.actionConstructor,context);
-				actionContext.register(act.name);
-				log.info("Action '``act``' registered.");
+					DoLayoutAnnotation>(
+					name,
+					decl,
+					ann,
+					context);
+				log.info("Layout Action '``act.decl``' registered.");
+			}
+			// else if setting
+			else if (exists ann = annotationChecker.setting(decl)) {
+				log.info("Registering Setting '``decl``'...");
+				value stng = doRegister<
+					LookAndFeelSetting|CollectValueSetting|RemoveValueSetting,
+					ClassDeclaration|FunctionDeclaration|ValueDeclaration,
+					LookAndFeelAnnotation|CollectValueAnnotation|RemoveValueAnnotation>(
+					name,
+					decl,
+					ann,
+					context);
+				if (is CollectValueSetting stng) {
+					log.info(
+						"Collect value setting '``stng.decl``' registered.");
+				}
+				else if (is RemoveValueSetting stng) {
+					log.info(
+						"Remove value setting '``stng.decl``' registered.");
+				}
+				else {
+					log.info(
+						"Look and Feel setting '``stng.decl``' registered.");
+				}
 			}
 			else {
 				log.warn(
-					"Neither component nor action therefore no objects registered for '``decl``'.");
+					"Neither component nor action nor setting therefore no objects registered for '``decl``'.");
 			}
 		}
 		else {
@@ -168,14 +200,14 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 		String name,
 		Decl decl,
 		Mrkr marker,
-		Constructor<Type,Decl,Context> constructor(InterfaceDeclaration cmpDecl),
 		Context context)
 		given Type satisfies Object
 		given Decl satisfies NestableDeclaration
 		given Mrkr satisfies Annotation&Marker
 		given Context satisfies ApplicationContext {
 		value cmpDcl = marker.marked;
-		value frmwrkActImplConstr = constructor(cmpDcl);
+		value frmwrkActImplConstr = frameworkImpl
+			.constructor<Type,Decl,Context>(cmpDcl);
 		value cmp = frmwrkActImplConstr.construct(name,decl,context);
 		beanFactory.registerSingleton(name, cmp);
 		return cmp;
@@ -184,52 +216,71 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 	void registerReactions(
 		Component<Object>|
 		Container<Object,Object>|
+		Collection<Object>|
 		Window<Object> cmp) {
 		if (exists ann = annotations(`SizeAnnotation`,cmp.decl)) {
 			value sizeReaction = SizeReaction(cmp,ann,context);
 			cmp.addReaction(sizeReaction);
-			log.info("Size Reaction on Component'``cmp``' registered.");
+			log.info("Size Reaction on Component '``cmp``' registered.");
 			if (exists cntrdAnn = annotations(`CenteredAnnotation`,cmp.decl)) {
 				cmp.addReaction(CenteredReaction(cmp,cntrdAnn,sizeReaction));
-				log.info("Centered Reaction on Component'``cmp``' registered.");
+				log.info("Centered Reaction on Component '``cmp``' registered.");
 			}
 		}
 		if (exists ann = annotations(`LocationAnnotation`,cmp.decl)) {
 			cmp.addReaction(LocationReaction(cmp,ann));
-			log.info("Location Reaction on Component'``cmp``' registered.");
+			log.info("Location Reaction on Component '``cmp``' registered.");
 		}
 		if (exists ann = annotations(`WithLayoutAnnotation`,cmp.decl)) {
-			assert (is Container<Object,Object> cmp);
-			cmp.addReaction(WithLayoutReaction(cmp,ann,context));
-			log.info("WithLayout Reaction on Component'``cmp``' registered.");
+			if (is Container<Object,Object> cmp) {
+				cmp.addReaction(WithLayoutReaction(cmp,ann,context));
+				log.info("WithLayout Reaction on Component '``cmp``' registered.");
+			}
+			else {
+				log.error(
+					"WithLayout Reaction on Component '``cmp``' cannot be registered. " +
+					"Component must be a Container.");
+			}
 		}
 		if (exists ann = annotations(`ParentAnnotation`,cmp.decl)) {
 			cmp.addReaction(ParentReaction(cmp,ann,context));
-			log.info("Parent Reaction on Component'``cmp``' registered.");
+			log.info("Parent Reaction on Component '``cmp``' registered.");
 		}
 		if (exists ann = annotations(`ExitOnCloseAnnotation`,cmp.decl)) {
-			assert (is Window<Object> cmp);
-			cmp.addReaction(ExitOnCloseReaction(cmp,ann));
-			log.info("ExitOnClose Reaction on Component'``cmp``' registered.");
-			// if any window has exitOnClose the app cannot terminate properly
-			// (e.g. every operation needed for the shutdown)
-			// therefore a default window listener is needed
-			value dfltWndwClsdCmp = frameworkImpl.defaultWindowClosingListener();
-			value lstnrName = nameResolver
-				.resolveUnbound(dfltWndwClsdCmp);
-			value lstnrRoot = nameResolver
-				.resolveRoot(dfltWndwClsdCmp);
-			value windowEventAnn = WindowEventAnnotation(
-				lstnrName, 
-				lstnrRoot, 
-				lowestPrecedenceOrder.order);
-			register(dfltWndwClsdCmp);
-			cmp.addReaction(WindowEventReaction(cmp,windowEventAnn,context));
-			log.info("WindowEvent Reaction on Component'``cmp``' registered.");
+			if (is Window<Object> cmp) {
+				cmp.addReaction(ExitOnCloseReaction(cmp,ann));
+				log.info("ExitOnClose Reaction on Component '``cmp``' registered.");
+				// if any window has exitOnClose the app cannot terminate properly
+				// (e.g. every operation needed for the shutdown)
+				// therefore a default window listener is needed
+				value dfltWndwClsdCmp = frameworkImpl.defaultWindowClosingListener();
+				value lstnrName = nameResolver
+					.resolveUnbound(dfltWndwClsdCmp);
+				value lstnrRoot = nameResolver
+					.resolveRoot(dfltWndwClsdCmp);
+				value windowEventAnn = ListenableAnnotation(
+					lstnrName, 
+					lstnrRoot, 
+					lowestPrecedenceOrder.order);
+				cmp.addReaction(ListenableReaction(cmp,windowEventAnn,context));
+				log.info("WindowEvent Reaction on Component '``cmp``' registered.");
+			}
+			else {
+				log.error(
+					"WindowEvent Reaction on Component '``cmp``' cannot be registered. " +
+					"Component must be a Window.");
+			}
 		}
-		if (exists ann = annotations(`OnActionPerformedAnnotation`,cmp.decl)) {
-			cmp.addReaction(OnActionPerformedReaction(cmp,ann,context));
-			log.info("OnActionPerformed Reaction on Component'``cmp``' registered.");
+		if (nonempty anns = annotations(`ListenableAnnotation`,cmp.decl)) {
+			anns.each((ListenableAnnotation ann) {
+				cmp.addReaction(ListenableReaction(cmp,ann,context));
+				log.info("Listenable Reaction on Component '``cmp``' registered.");
+			});
+		}
+		if (is Window<Object> cmp) {
+			value ann = CollectAnnotation();
+			cmp.addReaction(CollectReaction(cmp,ann,context));
+			log.info("Collect Reaction on Window '``cmp``' registered.");
 		}
 	}
 	
@@ -266,16 +317,15 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 		let (exs = cmpsOrExs.narrow<Exception>())
 		if (exs.empty) then
 			(() {
-				value cmps = cmpsOrExs.narrow<
+				value cmps = cmpsOrExs
+				.narrow<
 					Component<Object>|
 					Container<Object,Object>|
+					Collection<Object>|
 					Window<Object>|
 					Layout<Object>|
 					Listener<Object>>();
-				log.debug("Invoking autowired internal component construction...");
-				value val = decl.invoke([],*(cmps*.val));
-				log.debug("Internal component ``val else "null"``");
-				assert (is Type obj = val);
+				assert (is Type obj = decl.invoke([],*(cmps*.val)));
 				return obj;
 			})
 		else
@@ -285,5 +335,5 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 					"'``decl``' due to the following errors: ``exs*.message``.");
 			}))
 			throwing;
-			
+	
 }

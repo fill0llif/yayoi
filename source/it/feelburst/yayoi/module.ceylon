@@ -1,5 +1,5 @@
 native("jvm")
-module it.feelburst.yayoi "2.1.1" {
+module it.feelburst.yayoi "3.1.1" {
 	shared import java.base "8";
 	shared import javax.javaeeapi "7.0";
 	shared import java.desktop "8";

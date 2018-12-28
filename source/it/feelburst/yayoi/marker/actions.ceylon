@@ -4,32 +4,27 @@ import ceylon.language.meta.declaration {
 }
 
 import it.feelburst.yayoi.behaviour.action {
-	LayoutAction,
-	LookAndFeelAction
+	LayoutAction
+}
+import it.feelburst.yayoi.model {
+	Named
 }
 shared final sealed annotation class DoLayoutAnnotation(
-	shared String container,
+	shared actual String name,
 	shared actual String pckg = "")
 	satisfies OptionalAnnotation<
 		DoLayoutAnnotation,
 		FunctionDeclaration>&
-		PackageDependent&Marker {
+		Named&
+		PackageDependent&
+		Marker&
+		Order {
 	shared actual InterfaceDeclaration marked =>
 		`interface LayoutAction`;
-}
-
-shared final sealed annotation class SetLookAndFeelAnnotation()
-	satisfies OptionalAnnotation<
-		SetLookAndFeelAnnotation,
-		FunctionDeclaration>&Marker {
-	shared actual InterfaceDeclaration marked =>
-		`interface LookAndFeelAction`;
+	shared actual Integer order => 1;
 }
 
 shared annotation DoLayoutAnnotation doLayout(
 	String container,
 	String pckg = "") =>
 	DoLayoutAnnotation(container, pckg);
-
-shared annotation SetLookAndFeelAnnotation setLookAndFeel() =>
-	SetLookAndFeelAnnotation();

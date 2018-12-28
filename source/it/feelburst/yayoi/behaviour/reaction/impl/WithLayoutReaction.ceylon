@@ -29,10 +29,9 @@ shared class WithLayoutReaction(
 	satisfies Reaction<Container<Object,Object>> {
 	shared actual void execute() {
 		value nmRslvr = context.getBean(classForType<NameResolver>());
-		value containingPckg = nmRslvr.resolveRoot(cmp.decl,ann);
-		value lytName = "``containingPckg``.``ann.layout``";
+		value lytName = nmRslvr.resolveNamed(cmp.decl,ann);
 		value lyt = context.getBean(lytName,classForType<Layout<Object>>());
-		value setLayout = ann.agentMdl(cmp);
+		value setLayout = ann.agent(cmp);
 		setLayout(lyt);
 		log.debug("Reaction: Layout '``lyt``' set requested for Container '``cmp``'.");
 	}
