@@ -74,6 +74,6 @@ _Yayoi_ is written in [Ceylon](https://ceylon-lang.org) and is built on top of S
 You just need to add this declaration to your Ceylon module:
 
 ```ceylon
-import it.feelburst.yayoi "2.1.1";
+import it.feelburst.yayoi "3.1.1";
 ```
 
