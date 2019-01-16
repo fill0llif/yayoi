@@ -1,19 +1,16 @@
+import ceylon.language.meta {
+	annotations
+}
 import ceylon.language.meta.declaration {
 	ValueDeclaration
 }
 
 import it.feelburst.yayoi.marker {
-	Order,
 	LookAndFeelAnnotation
-}
-import ceylon.language.meta {
-
-	annotations
 }
 shared interface LookAndFeelSetting
 	satisfies 
-		Setting<String>&
-		Order {
+		Setting<String> {
 	shared formal actual ValueDeclaration decl;
 	shared actual LookAndFeelAnnotation ann {
 		assert (exists ann = annotations(`LookAndFeelAnnotation`,decl));
@@ -21,6 +18,4 @@ shared interface LookAndFeelSetting
 	}
 	shared default actual String val =>
 		decl.apply<String>().get();
-	shared actual Integer order =>
-		ann.order;
 }

@@ -14,18 +14,22 @@ import it.feelburst.yayoi.model.collection {
 import java.awt {
 	Container
 }
+import it.feelburst.yayoi.model.collection.awt {
+
+	AbstractAwtCollection
+}
 shared final class SwingCollection<out Type>(
 	String name,
 	ClassDeclaration|FunctionDeclaration|ValueDeclaration|Null declaration,
 	Value<Type> vl,
-	void addValue(Object cltr, Object cltd),
-	void removeValue(Object cltr, Object cltd),
+	Anything collectValue(String cltrName,Object cltr, String cltblName, Object cltbl),
+	Anything removeValue(String cltrName,Object cltr, String cltblName, Object cltbl),
 	void publishEvent(Object event))
-	extends AbstractSwingCollection<Type>(
+	extends AbstractAwtCollection<Type>(
 		name,
 		declaration,
 		vl,
-		addValue,
+		collectValue,
 		removeValue,
 		publishEvent)
 	satisfies Collection<Type>

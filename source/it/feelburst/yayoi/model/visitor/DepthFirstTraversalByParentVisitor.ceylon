@@ -46,8 +46,8 @@ shared final class DepthFirstTraversalByParentVisitor(
 	shared actual void visitComponent<Type>(Component<Type> visited) {
 		visitor.visitComponent(visited);
 	}
-	shared actual void visitContainer<Type,LayoutType>(
-		Container<Type,LayoutType> visited) {
+	shared actual void visitContainer<Type>(
+		Container<Type> visited) {
 		visitor.visitContainer(visited);
 		visitAbstractCollection(visited);
 	}
@@ -63,7 +63,7 @@ shared final class DepthFirstTraversalByParentVisitor(
 	void visitAbstractCollection(AbstractCollection clt) =>
 		children(clt)
 		.each((AbstractComponent cmpnt) {
-			if (is Container<Object,Object> cmpnt) {
+			if (is Container<Object> cmpnt) {
 				visitContainer(cmpnt);
 			}
 			else if (is Collection<Object> cmpnt) {

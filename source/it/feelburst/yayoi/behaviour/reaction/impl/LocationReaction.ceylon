@@ -13,8 +13,7 @@ shared class LocationReaction(
 	shared actual LocationAnnotation ann)
 	satisfies Reaction<AbstractComponent> {
 	shared actual void execute() {
-		value setLocation = ann.agent(cmp);
-		setLocation(ann.x, ann.y);
+		cmp.setLocation(ann.x, ann.y);
 		log.debug("Reaction: Location set at (``ann.x``,``ann.y``) requested for Component '``cmp``'.");
 	}
 }

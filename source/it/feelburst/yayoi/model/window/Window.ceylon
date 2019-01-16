@@ -3,13 +3,11 @@ import it.feelburst.yayoi.model {
 	Reactor,
 	Value
 }
-
+import it.feelburst.yayoi.model.collection {
+	AbstractCollection
+}
 import it.feelburst.yayoi.model.visitor {
 	Visitor
-}
-import it.feelburst.yayoi.model.collection {
-
-	AbstractCollection
 }
 
 "A window that can be rendered on screen and can contains
@@ -50,6 +48,6 @@ shared interface Window<out Type>
 	"Pack this window"
 	shared formal void pack();
 	
-	shared actual void accept(Visitor visitor) =>
+	shared default actual void accept(Visitor visitor) =>
 		visitor.visitWindow(this);
 }

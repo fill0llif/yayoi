@@ -20,15 +20,11 @@ import it.feelburst.yayoi.model.collection {
 import it.feelburst.yayoi.model.component {
 	AbstractComponent
 }
-import it.feelburst.yayoi.model.component.swing {
-	AbstractSwingComponent
+import it.feelburst.yayoi.model.component.awt {
+	AbstractAwtComponent
 }
 import it.feelburst.yayoi.model.impl {
 	AbstractNamedValue
-}
-
-import java.awt {
-	Container
 }
 
 import javax.swing {
@@ -36,22 +32,23 @@ import javax.swing {
 		invokeLater
 	}
 }
-shared sealed abstract class AbstractSwingCollection<out Type>(
+
+shared sealed abstract class AbstractAwtCollection<out Type>(
 	String name,
 	ClassDeclaration|FunctionDeclaration|ValueDeclaration|Null declaration,
 	Value<Type> vl,
-	void addValue(Object cltr, Object cltd),
-	void removeValue(Object cltr, Object cltd),
+	Anything collectValue(String cltrName,Object cltr, String cltblName, Object cltbl),
+	Anything removeValue(String cltrName,Object cltr, String cltblName, Object cltbl),
 	void publishEvent(Object event))
-	extends AbstractSwingComponent<Type>(
+	extends AbstractAwtComponent<Type>(
 		name,
 		declaration,
 		vl,
-		addValue,
+		collectValue,
 		removeValue,
 		publishEvent)
 	satisfies AbstractCollection
-	given Type satisfies Container {
+	given Type satisfies Object {
 	
 	value cmps = HashMap<String,AbstractComponent&Value<Object>>();
 	
@@ -98,7 +95,7 @@ shared sealed abstract class AbstractSwingCollection<out Type>(
 			value vl = val;
 			invokeLater(() {
 				try {
-					addValue(vl,component.val);
+					collectValue(this.name,vl,component.name,component.val);
 					publishEvent(ComponentCollected(this,component));
 					log.debug("SwingComponent '``component.val``' added to SwingCollection '``vl``'.");
 				}
@@ -122,7 +119,7 @@ shared sealed abstract class AbstractSwingCollection<out Type>(
 			value vl = val;
 			invokeLater(() {
 				try {
-					removeValue(vl,component.val);
+					removeValue(this.name,vl,component.name,component.val);
 					publishEvent(ComponentRemoved(this,component));
 					log.debug("SwingComponent '``component.val``' removed from SwingCollection '``vl``'.");
 				}

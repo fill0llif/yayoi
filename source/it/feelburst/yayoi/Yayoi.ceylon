@@ -26,7 +26,8 @@ import it.feelburst.yayoi.behaviour.reaction {
 	Dependent
 }
 import it.feelburst.yayoi.marker {
-	YayoiAnnotation
+	YayoiAnnotation,
+	FrameworkAnnotation
 }
 import it.feelburst.yayoi.model {
 	Reactor,
@@ -54,7 +55,11 @@ import java.lang {
 	Types {
 		classForType,
 		classForDeclaration
-	}
+	},
+	Runtime {
+		runtime
+	},
+	Thread
 }
 import java.util.concurrent {
 	ExecutorService
@@ -91,7 +96,8 @@ shared final class Yayoi(
 	satisfies Runnable {
 	
 	assert (exists appAnn = annotations(`YayoiAnnotation`, appType));
-	value frameworkImpl = appAnn.frameworkImpl;
+	assert (exists frmwrkAnn = annotations(`FrameworkAnnotation`, appType));
+	value framework = frmwrkAnn.framework;
 	
 	{Package+} packages(Framework frmwrk) =>
 		frmwrk.packages.chain(appAnn.basePackages);
@@ -100,44 +106,53 @@ shared final class Yayoi(
 		addLogWriter(writeLog);
 		configLogger();
 		log.info("Application startup...");
-		try (context = AnnotationConfigApplicationContext()) {
-			value frmwrkImpl = registerFrameworkImpl(context);
-			log.info("Framework implementation '``frameworkImpl``' found.");
-			context.register(classForType<Conf>());
-			context.refresh();
-			log.info("Registering components...");
-			packages(frmwrkImpl)
-			.each((Package pckg) =>
-				log.info("Base package '``pckg``' found."));
-			registerComponents(context,frmwrkImpl);
-			frmwrkImpl.setLookAndFeel(context);
-			log.info("Executing reactions...");
-			executeReactions(context);
-			log.info("Executing actions...");
-			executeActions(context);
-			log.info("Registering app...");
-			value invokeApp = registerApp(context);
-			log.info("Running app...");
-			invokeApp();
-			log.info("Waiting for window to close...");
-			frmwrkImpl.waitForWindowsToClose();
-			log.info("Application shutting down...");
-		}
+		value context = AnnotationConfigApplicationContext();
+		value frmwrkImpl = registerFrameworkImpl(context);
+		log.info("Framework implementation '``framework``' found.");
+		context.register(classForType<Conf>());
+		context.refresh();
+		addShutdownHooks(context);
+		log.info("Registering components...");
+		packages(frmwrkImpl)
+		.each((Package pckg) =>
+			log.info("Base package '``pckg``' found."));
+		registerComponents(context,frmwrkImpl);
+		frmwrkImpl.setLookAndFeel(context);
+		log.info("Executing reactions...");
+		executeReactions(context);
+		log.info("Executing actions...");
+		executeActions(context);
+		log.info("Registering app...");
+		value invokeApp = registerApp(context);
+		log.info("Running app...");
+		invokeApp();
+		log.info("Waiting for window to close...");
+		frmwrkImpl.waitForWindowsToClose();
+		shutdownExecutors(context);
 	}
 	
 	Framework registerFrameworkImpl(AnnotationConfigApplicationContext context) {
-		value frameworkImpl = this.frameworkImpl.get();
-		if (is Framework frameworkImpl) {
+		try {
+			value frmwrk = this.framework.apply<Framework>().get();
 			context.beanFactory
-				.registerSingleton("frameworkImpl", frameworkImpl);
-			return frameworkImpl;
+				.registerSingleton("frameworkImpl", frmwrk);
+			return frmwrk;
 		}
-		else {
+		catch (Exception e) {
 			value message =
-				"Cannot startup application. '``frameworkImpl else "null"``' is not a framework.";
+				"Cannot startup application due to the following error: ``e.message``.";
 			log.error(message);
 			throw Exception(message);
 		}
+	}
+	
+	void addShutdownHooks(AnnotationConfigApplicationContext context) {
+		runtime.addShutdownHook(Thread(object satisfies Runnable {
+			shared actual void run() {
+				log.info("Application shutting down...");
+				context.close();
+			}
+		}));
 	}
 	
 	void registerComponents(
@@ -173,7 +188,7 @@ shared final class Yayoi(
 				log.error(
 					"Reaction '``classDeclaration(reaction).name``' on component " +
 					"'``reaction.cmp``' failed executing due to the following error: " +
-					"``e.message``");
+					"``e.message``",e);
 			}
 		});
 	}
@@ -190,7 +205,7 @@ shared final class Yayoi(
 				log.error(
 					"Action '``classDeclaration(action).name``' on declaration " +
 					"'``action.decl``' failed executing due to the following error: " +
-					"``e.message``");
+					"``e.message``",e);
 			}
 		});
 	
@@ -216,6 +231,12 @@ shared final class Yayoi(
 			log.error(message);
 			throw Exception(message);
 		}
+	}
+	
+	void shutdownExecutors(AnnotationConfigApplicationContext context) {
+		value executorService = context
+				.getBean(classForType<ExecutorService>());
+		executorService.shutdown();
 	}
 	
 }

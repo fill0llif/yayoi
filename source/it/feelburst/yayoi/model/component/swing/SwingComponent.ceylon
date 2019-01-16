@@ -14,20 +14,23 @@ import it.feelburst.yayoi.model.component {
 import javax.swing {
 	JComponent
 }
+import it.feelburst.yayoi.model.component.awt {
 
-"Swing implementation of a component"
+	AbstractAwtComponent
+}
+
 shared final class SwingComponent<out Type>(
 	String name,
 	ClassDeclaration|FunctionDeclaration|ValueDeclaration|Null declaration,
 	Value<Type> vl,
-	void addValue(Object cltr, Object cltd),
-	void removeValue(Object cltr, Object cltd),
+	Anything collectValue(String cltrName,Object cltr, String cltblName, Object cltbl),
+	Anything removeValue(String cltrName,Object cltr, String cltblName, Object cltbl),
 	void publishEvent(Object event))
-	extends AbstractSwingComponent<Type>(
+	extends AbstractAwtComponent<Type>(
 		name,
 		declaration,
 		vl,
-		addValue,
+		collectValue,
 		removeValue,
 		publishEvent)
 	satisfies Component<Type>

@@ -42,7 +42,10 @@ import it.feelburst.yayoi.model.listener {
 }
 
 import java.awt {
-	Container
+	Component,
+	MenuComponent,
+	SystemTray,
+	TrayIcon
 }
 import java.lang {
 	volatile
@@ -53,16 +56,17 @@ import javax.swing {
 		invokeLater
 	}
 }
-shared sealed abstract class AbstractSwingComponent<out Type>(
+
+shared sealed abstract class AbstractAwtComponent<out Type>(
 	String name,
 	ClassDeclaration|FunctionDeclaration|ValueDeclaration|Null declaration,
 	Value<Type> vl,
-	void addValue(Object cltr, Object cltd),
-	void removeValue(Object cltr, Object cltd),
+	Anything collectValue(String cltrName,Object cltr, String cltblName, Object cltbl),
+	Anything removeValue(String cltrName,Object cltr, String cltblName, Object cltbl),
 	void publishEvent(Object event))
 	extends AbstractNamedValue<Type>(name,declaration,vl)
 	satisfies AbstractComponent&Reactor
-	given Type satisfies Container {
+	given Type satisfies Object {
 	
 	value awtContainer = AwtContainer(name,vl,publishEvent);
 	value reactor = ReactorImpl();
@@ -78,12 +82,20 @@ shared sealed abstract class AbstractSwingComponent<out Type>(
 	shared default actual void invalidate(Boolean internal) {
 		if (internal) {
 			value vl = val;
-			invokeLater(() {
-				if (awtContainer.valid) {
-					awtContainer.invalidate();
-					log.debug("SwingComponent '``vl``' and its ancestors invalidated.");
-				}
-			});
+			if (is Component vl) {
+				invokeLater(() {
+					if (awtContainer.valid) {
+						awtContainer.invalidate();
+						log.debug("SwingComponent '``vl``' and its ancestors invalidated.");
+					}
+				});
+			}
+			else if (is MenuComponent|SystemTray|TrayIcon vl) {}
+			else {
+				value message = "Component '``name``' is not an AwtComponent.";
+				log.error(message);
+				throw Exception(message);
+			}
 		}
 		if (exists parent = this.parent) {
 			parent.invalidate(false);
@@ -94,12 +106,20 @@ shared sealed abstract class AbstractSwingComponent<out Type>(
 	shared default actual void validate(Boolean internal) {
 		if (internal) {
 			value vl = val;
-			invokeLater(() {
-				if (!awtContainer.valid) {
-					awtContainer.validate();
-					log.debug("SwingComponent '``vl``' and its components validated.");
-				}
-			});
+			if (is Component vl) {
+				invokeLater(() {
+					if (!awtContainer.valid) {
+						awtContainer.validate();
+						log.debug("SwingComponent '``vl``' and its components validated.");
+					}
+				});
+			}
+			else if (is MenuComponent|SystemTray|TrayIcon vl) {}
+			else {
+				value message = "Component '``name``' is not an AwtComponent.";
+				log.error(message);
+				throw Exception(message);
+			}
 		}
 		internalValid = true;
 	}
@@ -118,17 +138,18 @@ shared sealed abstract class AbstractSwingComponent<out Type>(
 				Boolean internal) {
 				value prvsLstnr = lstnrs.put(listener.name, listener);
 				if (internal) {
+					value vl = val;
 					invokeLater(() {
 						try {
-							addValue(vl.val,listener.val);
+							collectValue(outer.name,vl,listener.name,listener.val);
 							publishEvent(ListenerCollected(outer,listener));
 							log.debug(
-								"AwtListener '``listener.val``' added to SwingComponent '``vl.val``'.");
+								"AwtListener '``listener.val``' added to SwingComponent '``vl``'.");
 						}
 						catch (Exception e) {
 							log.error(
 								"AwtListener '``listener.val``' has not been added " +
-								"to SwingComponent '``vl.val``' due to the following " +
+								"to SwingComponent '``vl``' due to the following " +
 								"error: ``e.message``");
 						}
 					});
@@ -140,17 +161,18 @@ shared sealed abstract class AbstractSwingComponent<out Type>(
 			
 			shared actual Listener<Object>? remove(String name) {
 				if (exists listener = lstnrs.remove(name)) {
+					value vl = val;
 					invokeLater(() {
 						try {
-							removeValue(vl.val,listener.val);
+							removeValue(outer.name,vl,listener.name,listener.val);
 							publishEvent(ListenerRemoved(outer,listener));
 							log.debug(
-								"AwtListener '``listener.val``' removed from SwingComponent '``vl.val``'.");
+								"AwtListener '``listener.val``' removed from SwingComponent '``vl``'.");
 						}
 						catch (Exception e) {
 							log.error(
 								"AwtListener '``listener.val``' has not been removed " +
-								"from SwingComponent '``vl.val``' due to the following " +
+								"from SwingComponent '``vl``' due to the following " +
 								"error: ``e.message``");
 						}
 					});
@@ -241,15 +263,28 @@ shared sealed abstract class AbstractSwingComponent<out Type>(
 	}
 	
 	shared default actual void center() {
-		value parentWidth = val.parent.width;
-		value parentHeight = val.parent.height;
-		value x = (parentWidth - width) / 2;
-		value y = (parentHeight - height) / 2;
-		invokeLater(() {
-			awtContainer.setLocation(x, y);
-			publishEvent(Centered(this));
-			log.debug("GUIEvent: SwingComponent '``this``' centered.");
-		});
+		value vl = val;
+		if (is Component vl) {
+			value parentWidth = vl.parent.width;
+			value parentHeight = vl.parent.height;
+			value x = (parentWidth - width) / 2;
+			value y = (parentHeight - height) / 2;
+			invokeLater(() {
+				awtContainer.setLocation(x, y);
+				publishEvent(Centered(this));
+				log.debug("GUIEvent: SwingComponent '``this``' centered.");
+			});
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon vl) {
+			value message = "Centered setting not supported for component '``name``'.";
+			log.error(message);
+			throw Exception(message);
+		}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
 	}
 	
 	shared actual Reaction<Type>[] reactions<Type=Object>()

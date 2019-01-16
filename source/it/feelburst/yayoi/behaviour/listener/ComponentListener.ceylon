@@ -5,8 +5,8 @@ import it.feelburst.yayoi.behaviour.listener.model {
 	LocationSet,
 	ComponentCollected,
 	ComponentRemoved,
-	WindowSetup,
-	WindowInvalidated,
+	RootSetup,
+	RootInvalidated,
 	Closed,
 	Packed,
 	Iconified,
@@ -56,6 +56,10 @@ import org.springframework.context.event {
 }
 import org.springframework.stereotype {
 	component
+}
+import it.feelburst.yayoi.model.window {
+
+	Window
 }
 component
 shared class ComponentListener() {
@@ -128,20 +132,29 @@ shared class ComponentListener() {
 	}
 	
 	eventListener
-	shared void handleWindowConstructed(WindowSetup event) {
-		value wndwVldtLfcycl = ValidationLifecycle(
-			event.window,
-			executor.execute);
-		beanFactory.registerSingleton(event.window.name + ".lifecycle", wndwVldtLfcycl);
-		wndwVldtLfcycl.start();
+	shared void handleWindowConstructed(RootSetup event) {
+		if (is Window<Object> root = event.root) {
+			value wndwVldtLfcycl = ValidationLifecycle(
+				root,
+				executor.execute);
+			beanFactory.registerSingleton(
+				root.name + ".lifecycle", 
+				wndwVldtLfcycl);
+			wndwVldtLfcycl.start();
+		}
 	}
 	
 	eventListener
-	shared void handleWindowInvalidated(WindowInvalidated event) {
-		value wndwVldtLfcycl = context.getBean(
-			event.window.name + ".lifecycle",
-			classForType<ValidationLifecycle>());
-		wndwVldtLfcycl.invalidate();
+	shared void handleRootInvalidated(RootInvalidated event) {
+		if (is Window<Object> root = event.root) {
+			value rootName = root.name + ".lifecycle";
+			if (context.containsBean(rootName)) {
+				value wndwVldtLfcycl = context.getBean(
+					rootName,
+					classForType<ValidationLifecycle>());
+				wndwVldtLfcycl.invalidate();
+			}
+		}
 	}
 	
 	eventListener

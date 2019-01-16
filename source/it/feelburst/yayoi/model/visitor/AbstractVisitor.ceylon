@@ -18,8 +18,8 @@ shared abstract class AbstractVisitor()
 	satisfies Visitor {
 	shared default actual void visitComponent<Type>(
 		Component<Type> visited) {}
-	shared default actual void visitContainer<Type,LayoutType>(
-		Container<Type,LayoutType> visited) {}
+	shared default actual void visitContainer<Type>(
+		Container<Type> visited) {}
 	shared default actual void visitCollection<Type>(
 		Collection<Type> visited) {}
 	shared default actual void visitWindow<Type>(

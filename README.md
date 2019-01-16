@@ -1,6 +1,6 @@
 # Yayoi やよい
 _Yayoi_ is a GUI annotation framework and provides/allows:
-* Swing implementation of basic GUI components: _Component_, _Container_, _Collection_, _Window_, _Layout_ and _Listener_ (_Collection_ is a collection of components on which the user has no control over its layout, e.g. Swing menus);
+* Swing and AWT implementation of basic GUI components: _Component_, _Container_, _Collection_, _Window_, _Layout_ and _Listener_ (_Collection_ is a collection of components on which the user has no control over its layout, e.g. Swing menus);
 * components are all lazily loaded;
 * setting essential component properties, _Reactions_ (**size**, **location**, **centered**, etc.);
 	* a reaction can depend on another one of the same component (e.g. **centered** depends on **size**);
@@ -16,16 +16,24 @@ _Yayoi_ is a GUI annotation framework and provides/allows:
 * layout construction on container declaration;
 * autowiring support for components with **named** annotation on method parameters.
 * defining _Settings_, top level class, method or object holding a reference to an object the user decide to use where he wants:
-	* Look and Feel is now a Setting;
-	* **collectValue** and **removeValue** let the user decide how the internal collector should collect/remove the internal value. As of now:
-		* JFrame|JDialog|JWindow collect/remove Container;
-		* JFrame|JDialog collect/remove JMenuBar;
-		* JMenuBar collect/remove JMenu;
-		* JMenu collect/remove JMenuItem;
-		* Container collect/remove Component;
-		* Window collect/remove WindowListener;
-		* AbstractButton collect/remove ActionListener;
-* Abstract collections (Containers, Collections and Windows) are now mutable maps of components;
+	* Look and Feel setting;
+* defining Collectors for collecting internal values of components (using **collectable** and **collecting** annotation);
+* default collectors:
+	* JFrame|JDialog collect/remove JMenuBar;
+	* Frame collect/remove MenuBar;
+	* JFrame|JDialog|JWindow collect/remove Container;
+	* Frame|Dialog|Window collect/remove Container;
+	* SystemTray collect/remove TrayIcon;
+	* TrayIcon collect/remove PopupMenu;
+	* JMenuBar collect/remove JMenu;
+	* MenuBar collect/remove Menu;
+	* JMenu collect/remove JMenuItem;
+	* Menu collect/remove MenuItem;
+	* Container collect/remove Component;
+	* Window collect/remove WindowListener;
+	* AbstractButton collect/remove ActionListener;
+	* MenuItem collect/remove ActionListener;
+* abstract collections (Containers, Collections and Windows) are now mutable maps of components;
 * abstract components deal now with mutable maps of listeners;
 * automatically validating all the hierarchy whenever it is all invalidated;
 * ordering components of **ordering** annotated abstract collections.
@@ -34,33 +42,26 @@ _Yayoi_ is written in [Ceylon](https://ceylon-lang.org) and is built on top of S
 
 # Change Log
 
-## 3.1.1 (2018-12-28)
+## 4.1.1 (2019-01-16)
 
 **Added:**
-- [#25 - Let the user define specific Settings](https://github.com/fill0llif/yayoi/issues/25);
-- [#26 - Let the user define Collections](https://github.com/fill0llif/yayoi/issues/26);
-- [#29 - Let the user define CollectValue and RemoveValue Settings to let a Component decides how the internal collector should collect/remove the internal value](https://github.com/fill0llif/yayoi/issues/29);
-- [#30 - Let Collections be mutable maps and let Components access listeners using mutable maps may be useful](https://github.com/fill0llif/yayoi/issues/30);
-- [#31 - Introduce Window validation lifecycle](https://github.com/fill0llif/yayoi/issues/31);
-- [#35 - Let the user order components of abstract collections with `ordering` annotation on abstract collection](https://github.com/fill0llif/yayoi/issues/35);
+- [#37 - Let the user define default framework and framework overrides with `framework` annotation](https://github.com/fill0llif/yayoi/issues/37);
+- [#43 - Add AWT framework implementation](https://github.com/fill0llif/yayoi/issues/43);
+- [#45 - Collections can be roots](https://github.com/fill0llif/yayoi/issues/45);
 
 **Changed:**
-- [#23 - Value `do` method is useless](https://github.com/fill0llif/yayoi/issues/23);
-- [#24 - Look and Feel may be more useful as a Setting](https://github.com/fill0llif/yayoi/issues/24);
-- [#27 - Abstract adding Listeners to Components discarding specific Listener Reaction and introducing generic Listenable Reaction](https://github.com/fill0llif/yayoi/issues/27);
-- [#28 - Window's collection of Components improvement](https://github.com/fill0llif/yayoi/issues/28);
-- [#33 - WindowState improvement](https://github.com/fill0llif/yayoi/issues/33);
-- [#34 - Change Swing implementation of centering a Window](https://github.com/fill0llif/yayoi/issues/34);
+- [#36 - Let the default log writer write on standard error if level is above info](https://github.com/fill0llif/yayoi/issues/36);
+- [#37 - Let the user define default framework and framework overrides with `framework` annotation](https://github.com/fill0llif/yayoi/issues/37);
+- [#41 - There is absolutely no need to use the metamodel to perform reactions](https://github.com/fill0llif/yayoi/issues/41);
+- [#42 - Container doesn't need to specify generic layout type](https://github.com/fill0llif/yayoi/issues/42);
 
 **Closed bugs/regressions:**
-- [#7 - Components design flaw](https://github.com/fill0llif/yayoi/issues/7);
-- [#20 - SwingLayoutAction failed to execute due to LateValue not being thread-safe](https://github.com/fill0llif/yayoi/issues/20);
-- [#21 - SwingLayoutAction not running on AWT thread causes GroupLayout to raise an IllegalStateException](https://github.com/fill0llif/yayoi/issues/21);
-- [#22 - Child component annotated with `parent` annotation cannot be resolved if package is different from the containing one](https://github.com/fill0llif/yayoi/issues/22);
-- [#32 - Swing components implementations aren't covariant in its internal type](https://github.com/fill0llif/yayoi/issues/32);
+- [#38 - Application does not correctly shut down](https://github.com/fill0llif/yayoi/issues/38);
+- [#39 - Collect and remove value settings replaced by Collectors](https://github.com/fill0llif/yayoi/issues/39);
+- [#40 - Window's validation cycle may still not be defined when window is invalidated (causing NoSuchBeanDefinitionException)](https://github.com/fill0llif/yayoi/issues/40);
+- [#44 - Assigning null layout when adding an unsuitable layout type on Swing/AWT container](https://github.com/fill0llif/yayoi/issues/44);
 
 **Regression:**
-- [#7 - Components design flaw](https://github.com/fill0llif/yayoi/issues/7);
 
 **Open:**
 - [#19 - LateValue should use late annotation to retain the late value](https://github.com/fill0llif/yayoi/issues/19);
@@ -74,6 +75,6 @@ _Yayoi_ is written in [Ceylon](https://ceylon-lang.org) and is built on top of S
 You just need to add this declaration to your Ceylon module:
 
 ```ceylon
-import it.feelburst.yayoi "3.1.1";
+import it.feelburst.yayoi "4.1.1";
 ```
 

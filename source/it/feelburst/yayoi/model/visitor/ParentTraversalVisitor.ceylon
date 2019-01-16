@@ -24,7 +24,7 @@ shared final class ParentTraversalVisitor(Visitor visitor)
 		visitAbstractCollectionParent(visited);
 	}
 	
-	shared actual void visitContainer<Type, LayoutType>(Container<Type,LayoutType> visited) {
+	shared actual void visitContainer<Type>(Container<Type> visited) {
 		visitor.visitContainer(visited);
 		visitAbstractCollectionParent(visited);
 	}
@@ -35,7 +35,7 @@ shared final class ParentTraversalVisitor(Visitor visitor)
 	
 	void visitAbstractCollectionParent(AbstractComponent cltPrnt) {
 		if (exists parent = cltPrnt.parent) {
-			if (is Container<Object,Object> parent) {
+			if (is Container<Object> parent) {
 				visitContainer(parent);
 			}
 			else if (is Collection<Object> parent) {

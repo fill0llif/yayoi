@@ -2,6 +2,30 @@
 
 # Change Log
 
+## 4.1.1 (2019-01-16)
+
+**Added:**
+- [#37 - Let the user define default framework and framework overrides with `framework` annotation](https://github.com/fill0llif/yayoi/issues/37);
+- [#43 - Add AWT framework implementation](https://github.com/fill0llif/yayoi/issues/43);
+- [#45 - Collections can be roots](https://github.com/fill0llif/yayoi/issues/45);
+
+**Changed:**
+- [#36 - Let the default log writer write on standard error if level is above info](https://github.com/fill0llif/yayoi/issues/36);
+- [#37 - Let the user define default framework and framework overrides with `framework` annotation](https://github.com/fill0llif/yayoi/issues/37);
+- [#41 - There is absolutely no need to use the metamodel to perform reactions](https://github.com/fill0llif/yayoi/issues/41);
+- [#42 - Container doesn't need to specify generic layout type](https://github.com/fill0llif/yayoi/issues/42);
+
+**Closed bugs/regressions:**
+- [#38 - Application does not correctly shut down](https://github.com/fill0llif/yayoi/issues/38);
+- [#39 - Collect and remove value settings replaced by Collectors](https://github.com/fill0llif/yayoi/issues/39);
+- [#40 - Window's validation cycle may still not be defined when window is invalidated (causing NoSuchBeanDefinitionException)](https://github.com/fill0llif/yayoi/issues/40);
+- [#44 - Assigning null layout when adding an unsuitable layout type on Swing/AWT container](https://github.com/fill0llif/yayoi/issues/44);
+
+**Regression:**
+
+**Open:**
+- [#19 - LateValue should use late annotation to retain the late value](https://github.com/fill0llif/yayoi/issues/19);
+
 ## 3.1.1 (2018-12-28)
 
 **Added:**

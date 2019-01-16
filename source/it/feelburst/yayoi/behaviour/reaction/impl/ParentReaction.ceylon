@@ -37,8 +37,7 @@ shared class ParentReaction(
 		value nmRslvr = context.getBean(classForType<NameResolver>());
 		value cntrName = nmRslvr.resolveNamed(cmp.decl,ann);
 		value cntr = context.getBean(cntrName,classForType<AbstractCollection>());
-		value setParent = ann.agent(cmp).set;
-		setParent(cntr);
+		cmp.parent = cntr;
 		log.debug("Reaction: Parent Container '``cntr``' set requested for Component '``cmp``'.");
 	}
 }

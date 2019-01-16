@@ -36,8 +36,7 @@ shared class ListenableReaction(
 		value nmRslvr = context.getBean(classForType<NameResolver>());
 		value lstnrName = nmRslvr.resolveNamed(cmp.decl,ann);
 		value listener = context.getBean(lstnrName,classForType<Listener<Object>>());
-		value addListener = ann.agent(cmp.listeners);
-		addListener(listener);
+		cmp.listeners.add(listener);
 		log.debug("Reaction: Listener '``listener``' set requested for Window '``cmp``'.");
 	}
 }

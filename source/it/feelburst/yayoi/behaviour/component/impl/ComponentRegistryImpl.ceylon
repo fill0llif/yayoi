@@ -1,3 +1,6 @@
+import ceylon.collection {
+	HashMap
+}
 import ceylon.language.meta {
 	annotations
 }
@@ -46,9 +49,8 @@ import it.feelburst.yayoi.marker {
 	CollectionAnnotation,
 	CollectAnnotation,
 	ListenableAnnotation,
-	CollectValueAnnotation,
-	RemoveValueAnnotation,
-	lowestPrecedenceOrder
+	lowestPrecedenceOrder,
+	FrameworkAnnotation
 }
 import it.feelburst.yayoi.model {
 	Framework
@@ -67,8 +69,6 @@ import it.feelburst.yayoi.model.listener {
 	Listener
 }
 import it.feelburst.yayoi.model.setting {
-	CollectValueSetting,
-	RemoveValueSetting,
 	LookAndFeelSetting
 }
 import it.feelburst.yayoi.model.window {
@@ -101,13 +101,15 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 	shared actual late NameResolver nameResolver;
 	
 	autowired
-	late Framework frameworkImpl;
+	late Framework framework;
 	
 	autowired
 	late AnnotationConfigApplicationContext context;
 	
 	autowired
 	late ConfigurableListableBeanFactory beanFactory;
+	
+	value frmwrkCache = HashMap<ValueDeclaration,Framework>();
 	
 	shared actual void register(
 		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) {
@@ -119,7 +121,7 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 				log.info("Registering Component '``decl``'...");
 				value cmp = doRegister<
 					Component<Object>|
-					Container<Object,Object>|
+					Container<Object>|
 					Collection<Object>|
 					Window<Object>|
 					Layout<Object>|
@@ -139,7 +141,7 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 				log.info("Component '``cmp``' registered.");
 				// if reactor (e.g. have reactions)
 				if (is Component<Object>|
-					Container<Object,Object>|
+					Container<Object>|
 					Collection<Object>|
 					Window<Object> cmp) {
 					registerReactions(cmp);
@@ -164,25 +166,14 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 			else if (exists ann = annotationChecker.setting(decl)) {
 				log.info("Registering Setting '``decl``'...");
 				value stng = doRegister<
-					LookAndFeelSetting|CollectValueSetting|RemoveValueSetting,
+					LookAndFeelSetting,
 					ClassDeclaration|FunctionDeclaration|ValueDeclaration,
-					LookAndFeelAnnotation|CollectValueAnnotation|RemoveValueAnnotation>(
+					LookAndFeelAnnotation>(
 					name,
 					decl,
 					ann,
 					context);
-				if (is CollectValueSetting stng) {
-					log.info(
-						"Collect value setting '``stng.decl``' registered.");
-				}
-				else if (is RemoveValueSetting stng) {
-					log.info(
-						"Remove value setting '``stng.decl``' registered.");
-				}
-				else {
-					log.info(
-						"Look and Feel setting '``stng.decl``' registered.");
-				}
+				log.info("Look and Feel setting '``stng.decl``' registered.");
 			}
 			else {
 				log.warn(
@@ -206,16 +197,45 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 		given Mrkr satisfies Annotation&Marker
 		given Context satisfies ApplicationContext {
 		value cmpDcl = marker.marked;
-		value frmwrkActImplConstr = frameworkImpl
+		value framework = frmwrk(decl);
+		value frmwrkActImplConstr = framework
 			.constructor<Type,Decl,Context>(cmpDcl);
 		value cmp = frmwrkActImplConstr.construct(name,decl,context);
 		beanFactory.registerSingleton(name, cmp);
 		return cmp;
 	}
 	
+	Framework frmwrk(NestableDeclaration decl) {
+		if (is ClassDeclaration|FunctionDeclaration|ValueDeclaration decl,
+			exists ann = annotations(`FrameworkAnnotation`,decl)) {
+			if (exists frmwrk = frmwrkCache[ann.framework]) {
+				log.debug("Framework implementation '``decl``' override found.");
+				return frmwrk;
+			}
+			else {
+				try {
+					value frmwrk = ann.framework.apply<Framework>().get();
+					frmwrkCache[ann.framework] = frmwrk;
+					log.debug("Framework implementation '``decl``' override found.");
+					return frmwrk;
+				}
+				catch (Exception e) {
+					value message =
+						"Cannot retrieve framework for declaration '``decl``' " +
+						"due to the following error: ``e.message``.";
+					log.error(message);
+					throw Exception(message);
+				}
+			}
+		}
+		else {
+			return this.framework;
+		}
+	}
+	
 	void registerReactions(
 		Component<Object>|
-		Container<Object,Object>|
+		Container<Object>|
 		Collection<Object>|
 		Window<Object> cmp) {
 		if (exists ann = annotations(`SizeAnnotation`,cmp.decl)) {
@@ -232,7 +252,7 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 			log.info("Location Reaction on Component '``cmp``' registered.");
 		}
 		if (exists ann = annotations(`WithLayoutAnnotation`,cmp.decl)) {
-			if (is Container<Object,Object> cmp) {
+			if (is Container<Object> cmp) {
 				cmp.addReaction(WithLayoutReaction(cmp,ann,context));
 				log.info("WithLayout Reaction on Component '``cmp``' registered.");
 			}
@@ -253,7 +273,7 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 				// if any window has exitOnClose the app cannot terminate properly
 				// (e.g. every operation needed for the shutdown)
 				// therefore a default window listener is needed
-				value dfltWndwClsdCmp = frameworkImpl.defaultWindowClosingListener();
+				value dfltWndwClsdCmp = framework.defaultWindowClosingListener();
 				value lstnrName = nameResolver
 					.resolveUnbound(dfltWndwClsdCmp);
 				value lstnrRoot = nameResolver
@@ -277,7 +297,8 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 				log.info("Listenable Reaction on Component '``cmp``' registered.");
 			});
 		}
-		if (is Window<Object> cmp) {
+		if (is Window<Object>|Collection<Object> cmp,
+			exists root = cmp.root, root == cmp) {
 			value ann = CollectAnnotation();
 			cmp.addReaction(CollectReaction(cmp,ann,context));
 			log.info("Collect Reaction on Window '``cmp``' registered.");
@@ -320,7 +341,7 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 				value cmps = cmpsOrExs
 				.narrow<
 					Component<Object>|
-					Container<Object,Object>|
+					Container<Object>|
 					Collection<Object>|
 					Window<Object>|
 					Layout<Object>|

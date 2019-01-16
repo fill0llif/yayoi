@@ -62,8 +62,8 @@ shared final class ValidationLifecycle(
 			shared actual void visitCollection<Type>(Collection<Type> visited) {
 				stopIfValid(visited);
 			}
-			shared actual void visitContainer<Type, LayoutType>(
-				Container<Type,LayoutType> visited) {
+			shared actual void visitContainer<Type>(
+				Container<Type> visited) {
 				stopIfValid(visited);
 			}
 			shared actual void visitWindow<Type>(Window<Type> visited) {

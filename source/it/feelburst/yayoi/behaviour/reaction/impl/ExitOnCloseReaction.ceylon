@@ -15,8 +15,7 @@ shared class ExitOnCloseReaction(
 	shared actual ExitOnCloseAnnotation ann)
 	satisfies Reaction<Window<Object>> {
 	shared actual void execute() {
-		value setExitOnClose = ann.agent(cmp);
-		setExitOnClose();
+		cmp.setExitOnClose();
 		log.debug("Reaction: ExitOnClose operation requested for Window '``cmp``'.");
 	}
 }

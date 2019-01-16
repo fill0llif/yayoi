@@ -3,33 +3,9 @@ import ceylon.language.meta.declaration {
 	ValueDeclaration,
 	ClassDeclaration
 }
-import ceylon.language.meta.model {
-	Method,
-	Attribute
-}
 
 import it.feelburst.yayoi.model {
-	Named,
-	Value,
-	ComponentMutableMap
-}
-import it.feelburst.yayoi.model.collection {
-	AbstractCollection
-}
-import it.feelburst.yayoi.model.component {
-	AbstractComponent,
-	Hierarchical
-}
-import it.feelburst.yayoi.model.container {
-	WithLayoutMutator,
-	Layout,
-	Container
-}
-import it.feelburst.yayoi.model.listener {
-	Listener
-}
-import it.feelburst.yayoi.model.window {
-	Window
+	Named
 }
 
 shared final sealed annotation class SizeAnnotation(
@@ -40,10 +16,7 @@ shared final sealed annotation class SizeAnnotation(
 		OptionalAnnotation<
 			SizeAnnotation,
 			ClassDeclaration|FunctionDeclaration|ValueDeclaration>&
-		Order {
-	shared Method<AbstractComponent,Anything,Integer[2]> agent =>
-		`AbstractComponent.setSize`;
-}
+		Order {}
 
 shared final sealed annotation class LocationAnnotation(
 	shared Integer x, 
@@ -53,10 +26,7 @@ shared final sealed annotation class LocationAnnotation(
 		OptionalAnnotation<
 			LocationAnnotation,
 			ClassDeclaration|FunctionDeclaration|ValueDeclaration>&
-		Order {
-	shared Method<AbstractComponent,Anything,Integer[2]> agent =>
-		`AbstractComponent.setLocation`;
-}
+		Order {}
 
 shared final sealed annotation class CenteredAnnotation(
 	shared actual Integer order = 4)
@@ -64,10 +34,7 @@ shared final sealed annotation class CenteredAnnotation(
 		OptionalAnnotation<
 			CenteredAnnotation,
 			ClassDeclaration|FunctionDeclaration|ValueDeclaration>&
-		Order {
-	shared Method<AbstractComponent,Anything,[]> agent =>
-		`AbstractComponent.center`;
-}
+		Order {}
 
 shared final sealed annotation class ParentAnnotation(
 	shared actual String name,
@@ -79,10 +46,7 @@ shared final sealed annotation class ParentAnnotation(
 			ClassDeclaration|FunctionDeclaration|ValueDeclaration>&
 		Named&
 		PackageDependent&
-		Order {
-	shared Attribute<Hierarchical,AbstractCollection?,AbstractCollection?> agent =>
-		`Hierarchical.parent`;
-}
+		Order {}
 
 shared final sealed annotation class ExitOnCloseAnnotation(
 	shared actual Integer order = 6)
@@ -90,10 +54,7 @@ shared final sealed annotation class ExitOnCloseAnnotation(
 		OptionalAnnotation<
 			ExitOnCloseAnnotation,
 			ClassDeclaration|FunctionDeclaration|ValueDeclaration>&
-		Order {
-	shared Method<Window<Object>,Anything,[]> agent =>
-		`Window<Object>.setExitOnClose`;
-}
+		Order {}
 
 shared final sealed annotation class WithLayoutAnnotation(
 	shared actual String name,
@@ -105,10 +66,7 @@ shared final sealed annotation class WithLayoutAnnotation(
 			ClassDeclaration|FunctionDeclaration|ValueDeclaration>&
 		Named&
 		PackageDependent&
-		Order {
-	shared Method<Container<Object,Object>,Anything,[Layout<Object>?]> agent =>
-		`WithLayoutMutator<Object>.setLayout`;
-}
+		Order {}
 
 shared final sealed annotation class ListenableAnnotation(
 	shared actual String name,
@@ -120,13 +78,7 @@ shared final sealed annotation class ListenableAnnotation(
 			ClassDeclaration|FunctionDeclaration|ValueDeclaration>&
 		Named&
 		PackageDependent&
-		Order {
-	shared Method<
-		ComponentMutableMap<String,Listener<Object>>,
-		Listener<Object>?,
-		[Listener<Object>, Boolean=]> agent =>
-		`ComponentMutableMap<String,Listener<Object>>.add`;
-}
+		Order {}
 
 shared final sealed annotation class CollectAnnotation(
 	shared actual Integer order = 3)
@@ -134,12 +86,7 @@ shared final sealed annotation class CollectAnnotation(
 		OptionalAnnotation<
 			CollectAnnotation,
 			FunctionDeclaration>&
-		Order {
-	shared Method<AbstractCollection,
-		<AbstractComponent&Value<Object>>?,
-		[AbstractComponent&Value<Object>, Boolean=]> agent =>
-		`AbstractCollection.add`;
-}
+		Order {}
 
 shared annotation SizeAnnotation size(
 	Integer width, 

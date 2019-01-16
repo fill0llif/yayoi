@@ -13,12 +13,16 @@ import it.feelburst.yayoi.model.container {
 import it.feelburst.yayoi.model.impl {
 	AbstractNamedValue
 }
+
+import java.awt {
+	LayoutManager
+}
 "Swing implementation of a layout"
-shared final class SwingLayout<out Type>(
+shared final class AwtLayout<out Type>(
 	String name,
 	ClassDeclaration|FunctionDeclaration|ValueDeclaration|Null declaration,
 	Value<Type> vl,
 	void publishEvent(Object event))
 	extends AbstractNamedValue<Type>(name,declaration,vl) 
 	satisfies Layout<Type>
-	given Type satisfies Object {}
+	given Type satisfies LayoutManager {}

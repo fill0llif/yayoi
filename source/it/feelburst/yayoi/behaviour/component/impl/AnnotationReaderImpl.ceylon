@@ -18,9 +18,7 @@ import it.feelburst.yayoi.marker {
 	DoLayoutAnnotation,
 	LayoutAnnotation,
 	LookAndFeelAnnotation,
-	CollectionAnnotation,
-	CollectValueAnnotation,
-	RemoveValueAnnotation
+	CollectionAnnotation
 }
 
 import org.springframework.stereotype {
@@ -59,17 +57,10 @@ shared class AnnotationReaderImpl() satisfies AnnotationReader {
 		else
 			null;
 	
-	shared actual LookAndFeelAnnotation|CollectValueAnnotation|RemoveValueAnnotation?
+	shared actual LookAndFeelAnnotation?
 		setting(ClassDeclaration|FunctionDeclaration|ValueDeclaration decl) =>
 		if (is ValueDeclaration decl) then
 			if (exists ann = annotations(`LookAndFeelAnnotation`,decl)) then
-				ann
-			else
-				null
-		else if (is FunctionDeclaration decl) then
-			if (exists ann = annotations(`CollectValueAnnotation`,decl)) then
-				ann
-			else if (exists ann = annotations(`RemoveValueAnnotation`,decl)) then
 				ann
 			else
 				null

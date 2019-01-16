@@ -32,7 +32,7 @@ import javax.swing {
 import org.springframework.context {
 	ApplicationContext
 }
-shared final class SwingLayoutAction(
+shared final class AwtLayoutAction(
 	shared actual String name,
 	shared actual FunctionDeclaration decl,
 	ApplicationContext context)
@@ -45,7 +45,7 @@ shared final class SwingLayoutAction(
 		value cntName = nmRslvr.resolveNamed(decl,ann);
 		value cnt = context.getBean(
 			cntName,
-			classForType<Container<Object,Object>>());
+			classForType<Container<Object>>());
 		if (exists lyt = cnt.layout) {
 			value cntrCmps = cnt.items.sequence();
 			value atwrdIntrnlActFtr =

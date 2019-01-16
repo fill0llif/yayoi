@@ -1,3 +1,6 @@
+import java.lang {
+	overloaded
+}
 import java.util.concurrent {
 	ExecutorService,
 	Executors {
@@ -5,24 +8,18 @@ import java.util.concurrent {
 	}
 }
 
+import org.springframework.beans.factory.annotation {
+	autowired
+}
+import org.springframework.context {
+	ApplicationEventPublisher,
+	ApplicationEvent
+}
 import org.springframework.context.annotation {
 	configuration,
 	componentScan,
 	bean,
 	AnnotationConfigApplicationContext
-}
-import org.springframework.beans.factory.annotation {
-
-	autowired
-}
-import org.springframework.context {
-
-	ApplicationEventPublisher,
-	ApplicationEvent
-}
-import java.lang {
-
-	overloaded
 }
 
 configuration

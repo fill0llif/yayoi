@@ -12,7 +12,7 @@ import it.feelburst.yayoi.behaviour.component {
 	NameResolver
 }
 import it.feelburst.yayoi.behaviour.listener.model {
-	WindowSetup
+	RootSetup
 }
 import it.feelburst.yayoi.behaviour.reaction {
 	Reaction
@@ -24,7 +24,8 @@ import it.feelburst.yayoi.marker {
 }
 import it.feelburst.yayoi.model {
 	Declaration,
-	Reactor
+	Reactor,
+	Value
 }
 import it.feelburst.yayoi.model.collection {
 	AbstractCollection,
@@ -56,10 +57,10 @@ import org.springframework.context {
 	ApplicationEventPublisher
 }
 shared class CollectReaction(
-	shared actual Window<Object> cmp,
+	shared actual Window<Object>|Collection<Object> cmp,
 	shared actual CollectAnnotation ann,
 	ApplicationContext context)
-	satisfies Reaction<Window<Object>> {
+	satisfies Reaction<Window<Object>|Collection<Object>> {
 	shared actual void execute() {
 		value nmRslvr = context.getBean(classForType<NameResolver>());
 		value evntPblshr = context.getBean(classForType<ApplicationEventPublisher>());
@@ -91,15 +92,14 @@ shared class CollectReaction(
 			shared actual void visitCollection<Type>(Collection<Type> visited) =>
 				visitAbstractCollection(visited);
 			
-			shared actual void visitContainer<Type, LayoutType>(
-				Container<Type,LayoutType> visited) =>
+			shared actual void visitContainer<Type>(
+				Container<Type> visited) =>
 				visitAbstractCollection(visited);
 			
 			shared actual void visitWindow<Type>(Window<Type> visited) =>
 				visitAbstractCollection(visited);
 			
 			void visitAbstractCollection(AbstractCollection&Declaration visited) {
-				value addComponent = ann.agent(visited).apply;
 				(if (exists ordAnn = annotations(`OrderingAnnotation`,visited.decl)) then
 					ordAnn.named.collect((NamedAnnotation named) =>
 						context.getBean(
@@ -107,10 +107,11 @@ shared class CollectReaction(
 							classForType<AbstractComponent>()))
 				else
 					prtTrvCltrVstr.children(visited))
-				.each((AbstractComponent cmp) {
+				.narrow<AbstractComponent&Value<Object>>()
+				.each((AbstractComponent&Value<Object> cmp) {
 					value addInt = internal(cmp);
 					if (is Boolean addInt) {
-						addComponent(cmp, addInt);
+						visited.add(cmp, addInt);
 						log.debug(
 							"Reaction: Component '``cmp``' has been added to Collection '``visited``'. " +
 							"Framework impl. add method has ``if (addInt) then
@@ -122,9 +123,14 @@ shared class CollectReaction(
 				});
 			}
 		};
-		
-		prtTrvCltrVstr.visitWindow(cmp);
-		log.debug("Reaction: Collect operation requested for Window '``cmp``'.");
-		evntPblshr.publishEvent(WindowSetup(cmp));
+		switch (cmp)
+		case (is Window<Object>) {
+			prtTrvCltrVstr.visitWindow(cmp);
+		}
+		else {
+			prtTrvCltrVstr.visitCollection(cmp);
+		}
+		log.debug("Reaction: Collect operation requested for root '``cmp``'.");
+		evntPblshr.publishEvent(RootSetup(cmp));
 	}
 }

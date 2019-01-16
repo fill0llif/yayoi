@@ -16,7 +16,10 @@ import it.feelburst.yayoi.model.visitor {
 }
 
 import java.awt {
-	Container
+	Component,
+	MenuComponent,
+	SystemTray,
+	TrayIcon
 }
 
 import org.springframework.context {
@@ -27,47 +30,195 @@ shared sealed class AwtContainer<out Type>(
 	shared actual String name,
 	Value<Type> vl,
 	void publishEvent(ApplicationEvent event))
-		satisfies AbstractComponent
-		given Type satisfies Container {
+	satisfies AbstractComponent
+	given Type satisfies Object {
 	
-	shared actual Boolean valid => 
-		vl.val.valid;
+	shared actual Boolean valid {
+		value val = vl.val;
+		if (is Component val) {
+			return val.valid;
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon val) {
+			return true;
+		}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
 	//DO NOT USE
 	shared actual variable AbstractCollection? parent = null;
 	
-	shared actual Integer x =>
-		vl.val.x;
+	shared actual Integer x {
+		value val = vl.val;
+		if (is Component val) {
+			return val.x;
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon val) {
+			value message = "X coordinate not supported for component '``name``'.";
+			log.error(message);
+			throw Exception(message);
+		}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
-	shared actual Integer y =>
-		vl.val.y;
+	shared actual Integer y {
+		value val = vl.val;
+		if (is Component val) {
+			return val.y;
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon val) {
+			value message = "Y coordinate not supported for component '``name``'.";
+			log.error(message);
+			throw Exception(message);
+		}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
-	shared actual Integer width =>
-		vl.val.width;
+	shared actual Integer width {
+		value val = vl.val;
+		if (is Component val) {
+			return val.width;
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon val) {
+			value message = "Width not supported for component '``name``'.";
+			log.error(message);
+			throw Exception(message);
+		}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
-	shared actual Integer height =>
-		vl.val.height;
+	shared actual Integer height {
+		value val = vl.val;
+		if (is Component val) {
+			return val.height;
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon val) {
+			value message = "Height not supported for component '``name``'.";
+			log.error(message);
+			throw Exception(message);
+		}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
-	shared actual Boolean visible =>
-		vl.val.visible;
+	shared actual Boolean visible {
+		value val = vl.val;
+		if (is Component val) {
+			return val.visible;
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon val) {
+			return true;
+		}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
-	shared actual void display() =>
-		vl.val.visible = true;
+	shared actual void display() {
+		value val = vl.val;
+		if (is Component val) {
+			val.visible = true;
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon val) {}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
-	shared actual void hide() =>
-		vl.val.visible = false;
+	shared actual void hide() {
+		value val = vl.val;
+		if (is Component val) {
+			val.visible = false;
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon val) {}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
-	shared actual void setLocation(Integer x, Integer y) =>
-		vl.val.setLocation(x, y);
+	shared actual void setLocation(Integer x, Integer y) {
+		value val = vl.val;
+		if (is Component val) {
+			val.setLocation(x, y);
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon val) {
+			value message = "Location setting not supported for component '``name``'.";
+			log.error(message);
+			throw Exception(message);
+		}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
-	shared actual void setSize(Integer width, Integer height) =>
-		vl.val.setSize(width, height);
+	shared actual void setSize(Integer width, Integer height) {
+		value val = vl.val;
+		if (is Component val) {
+			val.setSize(width, height);
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon val) {
+			value message = "Size setting not supported for component '``name``'.";
+			log.error(message);
+			throw Exception(message);
+		}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
-	shared actual void invalidate(Boolean internal) =>
-		vl.val.invalidate();
+	shared actual void invalidate(Boolean internal) {
+		value val = vl.val;
+		if (is Component val) {
+			val.invalidate();
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon val) {}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
-	shared actual void validate(Boolean internal) =>
-		vl.val.repaint();
+	shared actual void validate(Boolean internal) {
+		value val = vl.val;
+		if (is Component val) {
+			val.repaint();
+		}
+		else if (is MenuComponent|SystemTray|TrayIcon val) {}
+		else {
+			value message = "Component '``name``' is not an AwtComponent.";
+			log.error(message);
+			throw Exception(message);
+		}
+	}
 	
 	//DO NOT USE
 	shared actual void center() {}

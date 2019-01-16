@@ -32,17 +32,24 @@ shared interface Marker {
 	shared formal InterfaceDeclaration marked;
 }
 
+shared interface Collecting {
+	shared formal ValueDeclaration collector;
+}
+
 shared final sealed annotation class YayoiAnnotation(
-	shared {Package+} basePackages,
-	shared ValueDeclaration frameworkImpl)
+	shared {Package+} basePackages)
 	satisfies
-		OptionalAnnotation<YayoiAnnotation,ClassDeclaration> {}
+		OptionalAnnotation<
+			YayoiAnnotation,
+			ClassDeclaration> {}
 
 shared final sealed annotation class NamedAnnotation(
 	shared actual String name,
 	shared actual String pckg)
 	satisfies
-		OptionalAnnotation<NamedAnnotation,ValueDeclaration>&
+		OptionalAnnotation<
+			NamedAnnotation,
+			ValueDeclaration>&
 		Named&
 		PackageDependent {}
 
@@ -53,10 +60,32 @@ shared final sealed annotation class OrderingAnnotation(
 			OrderingAnnotation,
 			ClassDeclaration|FunctionDeclaration|ValueDeclaration> {}
 
+shared final sealed annotation class FrameworkAnnotation(
+	shared ValueDeclaration framework)
+	satisfies
+		OptionalAnnotation<
+			FrameworkAnnotation,
+			ClassDeclaration|FunctionDeclaration|ValueDeclaration> {}
+
+shared final sealed annotation class CollectingAnnotation(
+	shared actual ValueDeclaration collector)
+	satisfies
+		OptionalAnnotation<
+			CollectingAnnotation,
+			ClassDeclaration|FunctionDeclaration|ValueDeclaration>&
+		Collecting {}
+
+shared final sealed annotation class CollectableAnnotation(
+	shared actual ValueDeclaration collector)
+	satisfies
+		SequencedAnnotation<
+			CollectableAnnotation,
+			ClassDeclaration|FunctionDeclaration|ValueDeclaration>&
+		Collecting {}
+
 shared annotation YayoiAnnotation yayoi(
-	{Package+} basePackages,
-	ValueDeclaration frameworkImpl) =>
-	YayoiAnnotation(basePackages, frameworkImpl);
+	{Package+} basePackages) =>
+	YayoiAnnotation(basePackages);
 
 shared annotation NamedAnnotation named(
 	String name,
@@ -66,3 +95,15 @@ shared annotation NamedAnnotation named(
 shared annotation OrderingAnnotation ordering(
 	{NamedAnnotation*} named) =>
 	OrderingAnnotation(named);
+
+shared annotation FrameworkAnnotation framework(
+	ValueDeclaration framework) =>
+	FrameworkAnnotation(framework);
+
+shared annotation CollectingAnnotation collecting(
+	ValueDeclaration collector) =>
+	CollectingAnnotation(collector);
+
+shared annotation CollectableAnnotation collectable(
+	ValueDeclaration collector) =>
+	CollectableAnnotation(collector);

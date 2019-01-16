@@ -1,3 +1,6 @@
+import ceylon.collection {
+	HashMap
+}
 import ceylon.language.meta {
 	annotations,
 	modules
@@ -24,8 +27,6 @@ import it.feelburst.yayoi.marker {
 	LayoutAnnotation,
 	PackageDependent,
 	CollectionAnnotation,
-	CollectValueAnnotation,
-	RemoveValueAnnotation,
 	LookAndFeelAnnotation
 }
 import it.feelburst.yayoi.model {
@@ -37,10 +38,6 @@ import org.springframework.beans.factory.annotation {
 }
 import org.springframework.stereotype {
 	component
-}
-import ceylon.collection {
-
-	HashMap
 }
 
 component
@@ -115,7 +112,7 @@ shared class NameResolverImpl() satisfies NameResolver {
 	
 	String resolveSetting(
 		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl, 
-		LookAndFeelAnnotation|CollectValueAnnotation|RemoveValueAnnotation ann) =>
+		LookAndFeelAnnotation ann) =>
 		"``resolveUnbound(decl)``";
 	
 	Package? findParentPackage(

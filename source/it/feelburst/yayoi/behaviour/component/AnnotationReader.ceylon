@@ -12,9 +12,7 @@ import it.feelburst.yayoi.marker {
 	DoLayoutAnnotation,
 	LayoutAnnotation,
 	LookAndFeelAnnotation,
-	CollectionAnnotation,
-	CollectValueAnnotation,
-	RemoveValueAnnotation
+	CollectionAnnotation
 }
 shared sealed interface AnnotationReader {
 	"Get a component annotation if it is"
@@ -26,6 +24,6 @@ shared sealed interface AnnotationReader {
 	shared formal DoLayoutAnnotation? action(
 		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl);
 	"Get a setting annotation if it is"
-	shared formal LookAndFeelAnnotation|CollectValueAnnotation|RemoveValueAnnotation? 
+	shared formal LookAndFeelAnnotation? 
 		setting(ClassDeclaration|FunctionDeclaration|ValueDeclaration decl);
 }

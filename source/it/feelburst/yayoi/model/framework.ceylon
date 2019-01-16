@@ -1,6 +1,3 @@
-import ceylon.interop.java {
-	CeylonCollection
-}
 import ceylon.language.meta {
 	annotations
 }
@@ -20,13 +17,13 @@ import it.feelburst.yayoi.behaviour.action {
 	LayoutAction
 }
 import it.feelburst.yayoi.behaviour.component {
-	NameResolver,
 	ComponentRegistry
 }
 import it.feelburst.yayoi.marker {
-	cltValue=collectValue,
-	NamedAnnotation,
-	rmvValue=removeValue
+	CollectingAnnotation,
+	CollectableAnnotation,
+	collectable,
+	Collecting
 }
 import it.feelburst.yayoi.model.collection {
 	Collection
@@ -38,17 +35,14 @@ import it.feelburst.yayoi.model.container {
 	Container,
 	Layout
 }
-import it.feelburst.yayoi.model.impl {
-	LateValue
-}
 import it.feelburst.yayoi.model.listener {
 	Listener
 }
 import it.feelburst.yayoi.model.setting {
-	CollectValueSetting,
-	RemoveValueSetting,
-	LookAndFeelSetting,
-	AbstractCollectRemoveValueSetting
+	LookAndFeelSetting
+}
+import it.feelburst.yayoi.model.setting.impl {
+	LookAndFeelSettingImpl
 }
 import it.feelburst.yayoi.model.window {
 	Window
@@ -64,15 +58,14 @@ import java.util.concurrent {
 	ExecutorService
 }
 
+import org.springframework.beans.factory.support {
+	GenericBeanDefinition
+}
 import org.springframework.context {
 	ApplicationContext
 }
 import org.springframework.context.annotation {
 	AnnotationConfigApplicationContext
-}
-import org.springframework.beans.factory.support {
-
-	GenericBeanDefinition
 }
 
 shared abstract class Framework(shared String name) {
@@ -90,8 +83,6 @@ shared abstract class Framework(shared String name) {
 	shared formal void setLookAndFeel(ApplicationContext context);
 	shared formal void waitForWindowsToClose();
 	shared formal ClassDeclaration defaultWindowClosingListener();
-	shared formal {FunctionDeclaration*} defaultCollectValues();
-	shared formal {FunctionDeclaration*} defaultRemoveValues();
 }
 
 shared interface Constructor<Type,Decl,Context>
@@ -107,7 +98,7 @@ shared interface Constructor<Type,Decl,Context>
 shared interface ComponentConstructor
 	satisfies Constructor<
 		Component<Object>|
-		Container<Object,Object>|
+		Container<Object>|
 		Collection<Object>|
 		Window<Object>|
 		Layout<Object>|
@@ -142,11 +133,20 @@ shared interface ComponentConstructor
 						autowireCandidate = true;
 						scope = "singleton";
 					});
-				log.debug("Internal Component '``name``' definition registered.");
-				assert (is Type intrnlCmp = context
-					.getBean(name,classForDeclaration(decl)));
-				log.debug("Internal Component '``name``' constructed.");
-				return intrnlCmp;
+				log.debug("Internal component '``name``' registered.");
+				log.debug("Internal component '``name``' constructed.");
+				try {
+					assert (is Type intrnlCmp = context
+						.getBean(name,classForDeclaration(decl)));
+					return intrnlCmp;
+				}
+				catch (Exception e) {
+					value message =
+						"Internal component '``name``' cannot be retrieved due to " +
+						"the following error: ``e.message``.";
+					log.error(message);
+					throw Exception(message);
+				}
 			}
 			else {
 				Type intrnlCmp {
@@ -171,156 +171,79 @@ shared interface ComponentConstructor
 					}
 					catch (Exception e) {
 						value message =
-								"Internal Component '``name``' has not been constructed " +
-								"due to the following error: ``e.message``";
+							"Internal component '``name``' has not been constructed " +
+							"due to the following error: ``e.message``";
 						log.error(message);
 						throw Exception(message);
 					}
 				}
 				value intCmp = intrnlCmp;
-				log.debug("Internal Component '``name``' constructed.");
+				log.debug("Internal component '``name``' constructed.");
 				context.beanFactory.registerSingleton(name, intCmp);
-				log.debug("Internal Component '``name``' registered.");
+				log.debug("Internal component '``name``' registered.");
 				return intrnlCmp;
-				
 			}
 		});
 	
-	shared Anything(Object,Object) collectRemoveValue<CollectRemoveSetting>(
-		String cltrName,
-		AnnotationConfigApplicationContext context)
-		given CollectRemoveSetting satisfies AbstractCollectRemoveValueSetting {
-		value nmRslvr = context.getBean(classForType<NameResolver>());
-		value lateCltRmvValues = LateValue(() =>
-			CeylonCollection(context
-			.getBeansOfType(classForType<CollectRemoveSetting>())
-			.values())
-			.sort((CollectRemoveSetting x, CollectRemoveSetting y) =>
-				x <=> y));
-		return (Object cltr,Object cltd) {
-			value itr = lateCltRmvValues.val.iterator();
-			while (is CollectRemoveSetting cltRmvVlStng = itr.next()) {
-				if (cltRmvVlStng.decl.parameterDeclarations.size == 2,
-					is ValueDeclaration[2] prmtrDecls =
-					cltRmvVlStng.decl.parameterDeclarations) {
-					value [cltrPrmtrDecl,cltdPrmtrDecl] = prmtrDecls;
-					
-					Anything call() {
-						try {
-							log.debug(
-								"Calling collect/remove method '``cltRmvVlStng``' " +
-								"with collector '``cltr``' and collected '``cltd``'...");
-							return cltRmvVlStng.val(cltr,cltd);
-						}
-						catch (IncompatibleTypeException e) {
-							throw Exception(
-								"Collected '``cltd``' cannot be added to/removed from " +
-								"collector '``cltr``'. Add/remove method of setting " +
-								"declaration '``cltRmvVlStng.decl``' " +
-								"is not suitable: ``e.message``");
-						}
-					}
-					function sameCltr(NamedAnnotation cltrPrmtrDeclNmd) =>
-						nmRslvr.resolveNamed(
-							cltRmvVlStng.decl,
-							cltrPrmtrDeclNmd) == cltrName;
-					
-					function sameCltd(NamedAnnotation cltdPrmtrDeclNmd) =>
-						let (prmtCltd = (() {
-							assert (is 
-								Component<Object>|
-								Collection<Object>|
-								Container<Object,Object>|
-								Window<Object>|
-								Listener<Object> cltd = context.getBean(
-									nmRslvr.resolveNamed(
-										cltRmvVlStng.decl, 
-										cltdPrmtrDeclNmd), 
-									classForType<Named>()));
-							return cltd;
-						})())
-						prmtCltd.val == cltd;
-						
-					
-					if (exists cltrPrmtrDeclNmd =
-						annotations(`NamedAnnotation`,cltrPrmtrDecl),
-						exists cltdPrmtrDeclNmd =
-						annotations(`NamedAnnotation`,cltdPrmtrDecl)) {
-						if (sameCltr(cltrPrmtrDeclNmd),
-							sameCltd(cltdPrmtrDeclNmd)) {
-							return call();
-						}
-						else {
-							log.warn(
-								"Declaration '``cltRmvVlStng.decl``' is not suitable " +
-								"for collector '``cltr``' and collected '``cltd``'. " +
-								"Collector and collected refer to specific components.");
-							continue;
-						}
-					}
-					else if (
-						!annotations(`NamedAnnotation`,cltrPrmtrDecl) exists,
-						exists cltdPrmtrDeclNmd =
-						annotations(`NamedAnnotation`,cltdPrmtrDecl)) {
-						if (sameCltd(cltdPrmtrDeclNmd)) {
-							return call();
-						}
-						else {
-							log.warn(
-								"Declaration '``cltRmvVlStng.decl``' is not suitable " +
-								"for collector '``cltr``' and collected '``cltd``'. " +
-								"Collected refers to specific component.");
-							continue;
-						}
-					}
-					else if (
-						exists cltrPrmtrDeclNmd =
-						annotations(`NamedAnnotation`,cltrPrmtrDecl),
-						!annotations(`NamedAnnotation`,cltdPrmtrDecl) exists) {
-						if (sameCltr(cltrPrmtrDeclNmd)) {
-							return call();
-						}
-						else {
-							log.warn(
-								"Declaration '``cltRmvVlStng.decl``' is not suitable " +
-								"for collector '``cltr``' and collected '``cltd``'. " +
-								"Collector refers to specific component.");
-							continue;
-						}
-					}
-					else {
-						try {
-							log.debug(
-								"Calling collect/remove method '``cltRmvVlStng``' " +
-								"with collector '``cltr``' and collected '``cltd``'...");
-							return cltRmvVlStng.val(cltr,cltd);
-						}
-						catch (IncompatibleTypeException e) {
-							log.debug(
-								"Declaration '``cltRmvVlStng.decl``' is not suitable " +
-								"for collector '``cltr``' and collected '``cltd``'.");
-							continue;
-						}
-						catch (Exception e) {
-							throw e;
-						}
-					}
-				}
-				else {
-					log.warn(
-						"Declaration '``cltRmvVlStng.decl``' may have only " +
-						"2 value parameters, the first being the collector and the " +
-						"second being the collected.");
-				}
+	function callCltrMethod
+	({Collecting+} anns,FunctionDeclaration mthdDecl)
+	(Object cltr,Object cltbl) {
+		value itr = anns.iterator();
+		while (is Collecting ann = itr.next()) {
+			assert (exists cntr = ann.collector.get());
+			try {
+				log.debug(
+					"Calling collect/remove method of '``ann.collector``' " +
+					"with collector '``cltr``' and collectable '``cltbl``'...");
+				value rslt = mthdDecl.memberInvoke(cntr, [], *({cltr,cltbl}));
+				log.debug(
+					"Collect/remove method of '``ann.collector``' with collector " +
+					"'``cltr``' and collectable '``cltbl``' successfully called.");
+				return rslt;
 			}
-			value message =
-				"Collected '``cltd``' cannot be added to/removed from collector '``cltr``'. " +
-				"No suitable add/remove method has been found. " +
-				"Use '`` `function cltValue`.name ``'/" +
-				"'`` `function rmvValue`.name ``' annotation to define it.";
-			throw Exception(message);
+			catch (IncompatibleTypeException e) {
+				log.warn(
+					"Collectable '``cltbl``' cannot be added to/removed from " +
+					"collector '``cltr``'. Collect/remove method of " +
+					"'``ann.collector``' is not suitable: ``e.message``");
+				continue;
+			}
+		}
+		throw Exception(
+			"Collectable '``cltbl``' cannot be added to/removed from " +
+			"collector '``cltr``'. No suitable collect/remove method found in neither " +
+			"of the following collectors: ``anns*.collector``.");
+	}
+	
+	shared Anything(String,Object,String,Object) collecting(
+		String name,
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl,
+		AnnotationConfigApplicationContext context,
+		FunctionDeclaration mthdDecl) {
+		return (String cltrName,Object cltr,String cltblName,Object cltbl) {
+			assert (is 
+				Component<Object>|
+				Collection<Object>|
+				Container<Object>|
+				Window<Object>|
+				Listener<Object> cltblCmp =
+				context.getBean(cltblName,classForType<Named>()));
+			if (nonempty cltblAnn = annotations(`CollectableAnnotation`,cltblCmp.decl)) {
+				return callCltrMethod(cltblAnn,mthdDecl)(cltr,cltbl);
+			}
+			else if (exists cltngAnn = annotations(`CollectingAnnotation`,decl)) {
+				return callCltrMethod({cltngAnn},mthdDecl)(cltr,cltbl);
+			}
+			else {
+				throw Exception(
+					"No suitable collector has been found for component '``name``'. " +
+					"Use '`` `function collecting`.name ``' or " +
+					"'`` `function collectable`.name ``' annotations to point " +
+					"to a collector.");
+			}
 		};
 	}
+	
 }
 
 shared interface ActionConstructor
@@ -331,6 +254,16 @@ shared interface ActionConstructor
 
 shared interface SettingConstructor
 	satisfies Constructor<
-		LookAndFeelSetting|CollectValueSetting|RemoveValueSetting,
+		LookAndFeelSetting,
 		ClassDeclaration|FunctionDeclaration|ValueDeclaration,
 		ApplicationContext> {}
+
+shared object lookAndFeelSettingConstr satisfies SettingConstructor {
+	shared actual LookAndFeelSetting construct(
+		String name,
+		ClassDeclaration|FunctionDeclaration|ValueDeclaration decl,
+		ApplicationContext context) {
+		assert (is ValueDeclaration decl);
+		return LookAndFeelSettingImpl(name,decl);
+	}
+}
