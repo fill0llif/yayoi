@@ -110,6 +110,7 @@ shared final class Yayoi(
 		value frmwrkImpl = registerFrameworkImpl(context);
 		log.info("Framework implementation '``framework``' found.");
 		context.register(classForType<Conf>());
+		context.scan(*(appAnn.basePackages*.name));
 		context.refresh();
 		addShutdownHooks(context);
 		log.info("Registering components...");

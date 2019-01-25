@@ -17,7 +17,9 @@ import java.awt {
 }
 import java.awt.event {
 	ActionListener,
-	WindowListener
+	WindowListener,
+	MouseListener,
+	MouseMotionListener
 }
 
 import javax.swing {
@@ -27,7 +29,9 @@ import javax.swing {
 	JMenuBar,
 	JMenu,
 	JMenuItem,
-	AbstractButton
+	AbstractButton,
+	JComponent,
+	JPopupMenu
 }
 
 shared object swingWindowSwingMenuBar
@@ -158,6 +162,16 @@ shared object awtContainerAwtComponent
 	}
 }
 
+shared object swingComponentSwingPopupMenu 
+	satisfies Collector<JComponent,JPopupMenu> {
+	shared actual void collect(JComponent cltr, JPopupMenu cltbl) {
+		cltr.componentPopupMenu = cltbl;
+	}
+	shared actual void remove(JComponent cltr, JPopupMenu cltbl) {
+		cltr.componentPopupMenu = null;
+	}
+}
+
 shared object awtWindowAwtWindowListener 
 	satisfies Collector<Window,WindowListener> {
 	shared actual void collect(Window cltr, WindowListener cltbl) {
@@ -185,5 +199,25 @@ shared object awtMenuItemAwtActionListener
 	}
 	shared actual void remove(MenuItem cltr, ActionListener cltbl) {
 		cltr.removeActionListener(cltbl);
+	}
+}
+
+shared object awtComponentAwtMouseListener 
+	satisfies Collector<Component,MouseListener> {
+	shared actual void collect(Component cltr, MouseListener cltbl) {
+		cltr.addMouseListener(cltbl);
+	}
+	shared actual void remove(Component cltr, MouseListener cltbl) {
+		cltr.addMouseListener(cltbl);
+	}
+}
+
+shared object awtComponentAwtMouseMotionListener 
+	satisfies Collector<Component,MouseMotionListener> {
+	shared actual void collect(Component cltr, MouseMotionListener cltbl) {
+		cltr.addMouseMotionListener(cltbl);
+	}
+	shared actual void remove(Component cltr, MouseMotionListener cltbl) {
+		cltr.addMouseMotionListener(cltbl);
 	}
 }

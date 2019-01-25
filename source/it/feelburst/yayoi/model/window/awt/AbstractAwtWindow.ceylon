@@ -258,6 +258,10 @@ shared sealed abstract class AbstractAwtWindow<out Type>(
 	
 	shared default actual void setExitOnClose() {}
 	
+	shared default actual void setDisposeOnClose() {}
+	
+	shared default actual void setHideOnClose() {}
+	
 	shared actual void accept(Visitor visitor) =>
 		(super of Window<Type>).accept(visitor);
 	

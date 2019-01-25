@@ -2,6 +2,23 @@
 
 # Change Log
 
+## 5.1.0 (2019-01-25)
+
+**Added:**
+- [#46 - Add DisposeOnClose and HideOnClose reactions](https://github.com/fill0llif/yayoi/issues/46);
+- [#47 - Add Swing ComponentPopupMenu, MouseListener, MouseMotionListener collectors support](https://github.com/fill0llif/yayoi/issues/47);
+- [#48 - Add method autowiring support for non-Component beans using `autowired` or `qualifier`](https://github.com/fill0llif/yayoi/issues/48);
+- [#49 - Add Spring scan of Yayoi packages](https://github.com/fill0llif/yayoi/issues/49);
+
+**Changed:**
+
+**Closed bugs/regressions:**
+
+**Regression:**
+
+**Open:**
+- [#19 - LateValue should use late annotation to retain the late value](https://github.com/fill0llif/yayoi/issues/19);
+
 ## 4.1.1 (2019-01-16)
 
 **Added:**

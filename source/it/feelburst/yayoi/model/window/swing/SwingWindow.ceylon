@@ -5,7 +5,9 @@ import ceylon.language.meta.declaration {
 }
 
 import it.feelburst.yayoi.behaviour.listener.model {
-	ExitOnCloseSet
+	ExitOnCloseSet,
+	DisposeOnCloseSet,
+	HideOnCloseSet
 }
 import it.feelburst.yayoi.model {
 	Value
@@ -24,7 +26,9 @@ import javax.swing {
 	},
 	JWindow,
 	JFrame {
-		exitOnClose
+		exitOnClose,
+		disposeOnClose,
+		hideOnClose
 	},
 	JDialog
 }
@@ -58,6 +62,46 @@ shared final class SwingWindow<out Type>(
 				vl.defaultCloseOperation = exitOnClose;
 				publishEvent(ExitOnCloseSet(this));
 				log.info("GUIEvent: ExitOnClose operation set for SwingWindow '``this``'.");
+			});
+		}
+		case (is JWindow) {}
+		else {}
+	}
+	
+	shared actual void setDisposeOnClose() {
+		switch (vl = val)
+		case (is JFrame) {
+			invokeLater(() {
+				vl.defaultCloseOperation = disposeOnClose;
+				publishEvent(DisposeOnCloseSet(this));
+				log.info("GUIEvent: DisposeOnClose operation set for SwingWindow '``this``'.");
+			});
+		}
+		case (is JDialog) {
+			invokeLater(() {
+				vl.defaultCloseOperation = disposeOnClose;
+				publishEvent(DisposeOnCloseSet(this));
+				log.info("GUIEvent: DisposeOnClose operation set for SwingWindow '``this``'.");
+			});
+		}
+		case (is JWindow) {}
+		else {}
+	}
+	
+	shared actual void setHideOnClose() {
+		switch (vl = val)
+		case (is JFrame) {
+			invokeLater(() {
+				vl.defaultCloseOperation = hideOnClose;
+				publishEvent(HideOnCloseSet(this));
+				log.info("GUIEvent: HideOnClose operation set for SwingWindow '``this``'.");
+			});
+		}
+		case (is JDialog) {
+			invokeLater(() {
+				vl.defaultCloseOperation = hideOnClose;
+				publishEvent(HideOnCloseSet(this));
+				log.info("GUIEvent: HideOnClose operation set for SwingWindow '``this``'.");
 			});
 		}
 		case (is JWindow) {}

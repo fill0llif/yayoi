@@ -14,7 +14,7 @@ _Yayoi_ is a GUI annotation framework and provides/allows:
 	* a default log writer is already registered;
 * visitor structure on component, container, collection and window;
 * layout construction on container declaration;
-* autowiring support for components with **named** annotation on method parameters.
+* autowiring support for components with **named** and for any other beans with **autowired** or **qualifier** annotations on method parameters;
 * defining _Settings_, top level class, method or object holding a reference to an object the user decide to use where he wants:
 	* Look and Feel setting;
 * defining Collectors for collecting internal values of components (using **collectable** and **collecting** annotation);
@@ -33,33 +33,30 @@ _Yayoi_ is a GUI annotation framework and provides/allows:
 	* Window collect/remove WindowListener;
 	* AbstractButton collect/remove ActionListener;
 	* MenuItem collect/remove ActionListener;
+	* JComponent collect/remove JPopupMenu;
+	* Component collect/remove MouseListener;
+	* Component collect/remove MouseMotionListener;
 * abstract collections (Containers, Collections and Windows) are now mutable maps of components;
 * abstract components deal now with mutable maps of listeners;
 * automatically validating all the hierarchy whenever it is all invalidated;
-* ordering components of **ordering** annotated abstract collections.
+* ordering components of **ordering** annotated abstract collections;
+* scanning of Spring components contained in Yayoi packages.
 
 _Yayoi_ is written in [Ceylon](https://ceylon-lang.org) and is built on top of Spring
 
 # Change Log
 
-## 4.1.1 (2019-01-16)
+## 5.1.0 (2019-01-25)
 
 **Added:**
-- [#37 - Let the user define default framework and framework overrides with `framework` annotation](https://github.com/fill0llif/yayoi/issues/37);
-- [#43 - Add AWT framework implementation](https://github.com/fill0llif/yayoi/issues/43);
-- [#45 - Collections can be roots](https://github.com/fill0llif/yayoi/issues/45);
+- [#46 - Add DisposeOnClose and HideOnClose reactions](https://github.com/fill0llif/yayoi/issues/46);
+- [#47 - Add Swing ComponentPopupMenu, MouseListener, MouseMotionListener collectors support](https://github.com/fill0llif/yayoi/issues/47);
+- [#48 - Add method autowiring support for non-Component beans using `autowired` or `qualifier`](https://github.com/fill0llif/yayoi/issues/48);
+- [#49 - Add Spring scan of Yayoi packages](https://github.com/fill0llif/yayoi/issues/49);
 
 **Changed:**
-- [#36 - Let the default log writer write on standard error if level is above info](https://github.com/fill0llif/yayoi/issues/36);
-- [#37 - Let the user define default framework and framework overrides with `framework` annotation](https://github.com/fill0llif/yayoi/issues/37);
-- [#41 - There is absolutely no need to use the metamodel to perform reactions](https://github.com/fill0llif/yayoi/issues/41);
-- [#42 - Container doesn't need to specify generic layout type](https://github.com/fill0llif/yayoi/issues/42);
 
 **Closed bugs/regressions:**
-- [#38 - Application does not correctly shut down](https://github.com/fill0llif/yayoi/issues/38);
-- [#39 - Collect and remove value settings replaced by Collectors](https://github.com/fill0llif/yayoi/issues/39);
-- [#40 - Window's validation cycle may still not be defined when window is invalidated (causing NoSuchBeanDefinitionException)](https://github.com/fill0llif/yayoi/issues/40);
-- [#44 - Assigning null layout when adding an unsuitable layout type on Swing/AWT container](https://github.com/fill0llif/yayoi/issues/44);
 
 **Regression:**
 
@@ -75,6 +72,6 @@ _Yayoi_ is written in [Ceylon](https://ceylon-lang.org) and is built on top of S
 You just need to add this declaration to your Ceylon module:
 
 ```ceylon
-import it.feelburst.yayoi "4.1.1";
+import it.feelburst.yayoi "5.1.0";
 ```
 

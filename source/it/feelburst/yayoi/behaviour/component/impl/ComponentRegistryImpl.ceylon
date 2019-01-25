@@ -9,7 +9,9 @@ import ceylon.language.meta.declaration {
 	FunctionDeclaration,
 	ValueDeclaration,
 	NestableDeclaration,
-	FunctionOrValueDeclaration
+	FunctionOrValueDeclaration,
+	OpenClassType,
+	OpenInterfaceType
 }
 
 import it.feelburst.yayoi.behaviour.action {
@@ -28,7 +30,9 @@ import it.feelburst.yayoi.behaviour.reaction.impl {
 	LocationReaction,
 	WithLayoutReaction,
 	CollectReaction,
-	ListenableReaction
+	ListenableReaction,
+	DisposeOnCloseReaction,
+	HideOnCloseReaction
 }
 import it.feelburst.yayoi.marker {
 	ContainerAnnotation,
@@ -50,7 +54,9 @@ import it.feelburst.yayoi.marker {
 	CollectAnnotation,
 	ListenableAnnotation,
 	lowestPrecedenceOrder,
-	FrameworkAnnotation
+	FrameworkAnnotation,
+	DisposeOnCloseAnnotation,
+	HideOnCloseAnnotation
 }
 import it.feelburst.yayoi.model {
 	Framework
@@ -75,8 +81,17 @@ import it.feelburst.yayoi.model.window {
 	Window
 }
 
+import java.lang {
+	Types {
+		classForDeclaration
+	}
+}
+
 import org.springframework.beans.factory.annotation {
-	autowired
+	autowired,
+	Autowired,
+	Qualifier,
+	qualifier
 }
 import org.springframework.beans.factory.config {
 	ConfigurableListableBeanFactory
@@ -287,7 +302,29 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 			}
 			else {
 				log.error(
-					"WindowEvent Reaction on Component '``cmp``' cannot be registered. " +
+					"ExitOnClose Reaction on Component '``cmp``' cannot be registered. " +
+					"Component must be a Window.");
+			}
+		}
+		if (exists ann = annotations(`DisposeOnCloseAnnotation`,cmp.decl)) {
+			if (is Window<Object> cmp) {
+				cmp.addReaction(DisposeOnCloseReaction(cmp,ann));
+				log.info("DisposeOnClose Reaction on Component '``cmp``' registered.");
+			}
+			else {
+				log.error(
+					"DisposeOnClose Reaction on Component '``cmp``' cannot be registered. " +
+					"Component must be a Window.");
+			}
+		}
+		if (exists ann = annotations(`HideOnCloseAnnotation`,cmp.decl)) {
+			if (is Window<Object> cmp) {
+				cmp.addReaction(HideOnCloseReaction(cmp,ann));
+				log.info("HideOnClose Reaction on Component '``cmp``' registered.");
+			}
+			else {
+				log.error(
+					"HideOnClose Reaction on Component '``cmp``' cannot be registered. " +
 					"Component must be a Window.");
 			}
 		}
@@ -305,48 +342,140 @@ shared class ComponentRegistryImpl() satisfies ComponentRegistry {
 		}
 	}
 	
+	function getClassOrInterfaceType(
+		FunctionDeclaration|ValueDeclaration decl) {
+		try {
+			switch (type = decl.openType)
+			case (is OpenClassType|OpenInterfaceType) {
+				return type;
+			}
+			else {
+				return Exception(
+					"Type of declararion '``decl``' must be a class or an interface.");
+			}
+		}
+		catch (Exception e) {
+			return e;
+		}
+	}
+	
+	function sameType(FunctionDeclaration decl,ValueDeclaration prmtrDecl) {
+		value mthdType = getClassOrInterfaceType(decl);
+		value prmtrType = getClassOrInterfaceType(prmtrDecl);
+		if (is OpenClassType|OpenInterfaceType mthdType) {
+			if (is OpenClassType|OpenInterfaceType prmtrType) {
+				return mthdType.declaration == prmtrType.declaration;
+			}
+			else {
+				return prmtrType;
+			}
+		}
+		else {
+			return mthdType;
+		}
+	}
+	
+	
+	function getBeanByType(ValueDeclaration prmtrDecl) {
+		try {
+			value prmtrType = getClassOrInterfaceType(prmtrDecl);
+			if (is OpenClassType|OpenInterfaceType prmtrType) {
+				return context.getBean(classForDeclaration(prmtrType.declaration));
+			}
+			else {
+				return prmtrType;
+			}
+		}
+		catch (Exception e) {
+			return e;
+		}
+	}
+	
+	function getBeanByName(
+		String name,
+		FunctionDeclaration decl,
+		String prmtrName,
+		ValueDeclaration prmtrDecl) =>
+		// you cannot autowire the same object
+		if (prmtrName != name) then
+			if (context.containsBean(prmtrName)) then
+				context.getBean(prmtrName)
+			else
+				Exception(
+					"No object named '``prmtrName``' to autowire into " +
+					"declaration '``prmtrDecl``' of declaration '``decl``' " +
+					"has been found.")
+		else
+			Exception(
+				"Cannot autowire object '``prmtrName``' into declaration " +
+				"'``prmtrDecl``' of declaration '``decl``'. They are the same " +
+				"object! An object cannot autowire itself!");
+		
+	
 	shared actual <Type|Exception>() autowired<Type>(
 		String name,
 		FunctionDeclaration decl) =>
-		let (cmpsOrExs = decl.parameterDeclarations
+		let (cmpsOrObjsOrExs = decl.parameterDeclarations
 		.collect((FunctionOrValueDeclaration prmtrDecl) =>
+			//parameter must be a value
 			if (is ValueDeclaration prmtrDecl) then
+				//named for components
 				if (exists prmtrNmd = annotations(`NamedAnnotation`,prmtrDecl)) then
 					let (prmtrName = nameResolver.resolveNamed(decl, prmtrNmd))
-					if (prmtrName != name) then
-						if (context.containsBean(prmtrName)) then
-							context.getBean(prmtrName)
+					getBeanByName(name,decl,prmtrName,prmtrDecl)
+				//autowire any other bean by name
+				else if (nonempty qlfrAnns = prmtrDecl.annotations<Qualifier>()) then
+					let (prmtrName = qlfrAnns.first.\ivalue())
+					getBeanByName(name,decl,prmtrName,prmtrDecl)
+				//autowired any other bean by type
+				else if (prmtrDecl.annotated<Autowired>()) then
+					let (stap = sameType(decl,prmtrDecl))
+					if (is Boolean stap) then
+						//autowire by type
+						if (!stap) then
+							let (bbt = getBeanByType(prmtrDecl))
+							if (is Exception bbt) then
+								Exception(
+									"Cannot autowire object into declaration " +
+									"'``prmtrDecl``' of declaration '``decl``' due to the " +
+									"following error: ``bbt.message``.")
+							else
+								bbt
 						else
 							Exception(
-								"No component named '``prmtrName``' to autowire into " +
-								"declaration '``prmtrDecl``' of declaration '``decl``' " +
-								"has been found.")
+								"Cannot autowire object into declaration " +
+								"'``prmtrDecl``' of declaration '``decl``'. They both " +
+								"produce the same type and no '`` `function qualifier`.name ``' " +
+								"has been found, so it cannot be safely autowired.")
 					else
 						Exception(
-							"Cannot autowire component '``prmtrName``' into declaration " +
-							"'``prmtrDecl``' of declaration '``decl``'. They are the same " +
-							"object! A component cannot autowire itself!")
+							"Cannot autowire object into declaration " +
+							"'``prmtrDecl``' of declaration '``decl``' due to the " +
+							"following error: ``stap.message``.")
 				else
 					Exception(
-						"No named annotation found on declaration " +
+						"No named or autowired annotation found on declaration " +
 						"'``prmtrDecl``' of declaration '``decl``'.")
 			else
 				Exception(
 					"Parameter declaration '``prmtrDecl``' of declaration " +
 					"'``decl``' must be a value declaration.")))
 		
-		let (exs = cmpsOrExs.narrow<Exception>())
+		let (exs = cmpsOrObjsOrExs.narrow<Exception>())
 		if (exs.empty) then
 			(() {
-				value cmps = cmpsOrExs
-				.narrow<
-					Component<Object>|
-					Container<Object>|
-					Collection<Object>|
-					Window<Object>|
-					Layout<Object>|
-					Listener<Object>>();
-				assert (is Type obj = decl.invoke([],*(cmps*.val)));
+				value cmpsOrObjs = cmpsOrObjsOrExs
+				.collect((Object cmpOrObj) =>
+					if (is Component<Object>|
+						Container<Object>|
+						Collection<Object>|
+						Window<Object>|
+						Layout<Object>|
+						Listener<Object> cmpOrObj) then
+						cmpOrObj.val
+					else
+						cmpOrObj);
+				assert (is Type obj = decl.invoke([],*cmpsOrObjs));
 				return obj;
 			})
 		else

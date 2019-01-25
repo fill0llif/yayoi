@@ -27,6 +27,10 @@ shared interface Window<out Type>
 	shared formal WindowState<Object> state;
 	"Set exit app on close on this window"
 	shared formal void setExitOnClose();
+	"Set dispose window on close"
+	shared formal void setDisposeOnClose();
+	"Set hide window on close"
+	shared formal void setHideOnClose();
 	"Whether this window is visible or it has been disposed of"
 	shared formal Boolean opened;
 	"Whether this window is maximized or not"

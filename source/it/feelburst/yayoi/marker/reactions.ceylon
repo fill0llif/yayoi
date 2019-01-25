@@ -56,6 +56,22 @@ shared final sealed annotation class ExitOnCloseAnnotation(
 			ClassDeclaration|FunctionDeclaration|ValueDeclaration>&
 		Order {}
 
+shared final sealed annotation class DisposeOnCloseAnnotation(
+	shared actual Integer order = 6)
+	satisfies
+		OptionalAnnotation<
+			DisposeOnCloseAnnotation,
+			ClassDeclaration|FunctionDeclaration|ValueDeclaration>&
+		Order {}
+
+shared final sealed annotation class HideOnCloseAnnotation(
+	shared actual Integer order = 6)
+	satisfies
+		OptionalAnnotation<
+			HideOnCloseAnnotation,
+			ClassDeclaration|FunctionDeclaration|ValueDeclaration>&
+		Order {}
+
 shared final sealed annotation class WithLayoutAnnotation(
 	shared actual String name,
 	shared actual String pckg = "",
@@ -108,6 +124,12 @@ shared annotation ParentAnnotation parent(
 
 shared annotation ExitOnCloseAnnotation exitOnClose() =>
 	ExitOnCloseAnnotation();
+
+shared annotation DisposeOnCloseAnnotation disposeOnClose() =>
+	DisposeOnCloseAnnotation();
+
+shared annotation HideOnCloseAnnotation hideOnClose() =>
+	HideOnCloseAnnotation();
 
 shared annotation WithLayoutAnnotation withLayout(
 	String layout, 
